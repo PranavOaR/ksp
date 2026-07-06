@@ -79,7 +79,7 @@ export default function AnalyticsPage() {
         <TrendChart points={data.monthlyWithForecast} />
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="stagger grid gap-6 lg:grid-cols-2">
         <Card title="By crime type" subtitle="Distribution across offence categories (C4 input)">
           <BreakdownBar data={data.byCrimeType} />
         </Card>
@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="stagger grid gap-6 lg:grid-cols-2">
         <Card title="Hour-of-day pattern" subtitle="When crimes occur (C1) — note the night-hour concentration">
           <DistributionBar data={hourData} xKey="hour" />
         </Card>

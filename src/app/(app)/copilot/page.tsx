@@ -133,7 +133,7 @@ function CopilotChat() {
             type="button"
             onClick={handleCsvExport}
             disabled={!hasExportableTurns}
-            className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-secondary)] hover:border-[var(--series-1)] hover:text-[var(--text-primary)] disabled:opacity-40"
+            className="btn-ghost px-4 py-2 text-xs disabled:opacity-40"
           >
             ⬇ CSV
           </button>
@@ -141,7 +141,7 @@ function CopilotChat() {
             type="button"
             onClick={handlePdfExport}
             disabled={!hasExportableTurns}
-            className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-secondary)] hover:border-[var(--series-1)] hover:text-[var(--text-primary)] disabled:opacity-40"
+            className="btn-ghost px-4 py-2 text-xs disabled:opacity-40"
           >
             ⬇ PDF
           </button>
@@ -170,13 +170,13 @@ function CopilotChat() {
         {turns.map((turn) => (
           <div key={turn.id} className="space-y-3">
             <div className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-[#1c5cab] px-4 py-2 text-sm text-white">
+              <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-[var(--accent)] px-4 py-2 text-sm text-white">
                 {turn.question}
               </div>
             </div>
             <div className="max-w-[92%] rounded-2xl rounded-bl-sm border border-[var(--border-1)] bg-[var(--surface-2)]/60 px-4 py-3">
               {turn.error ? (
-                <p className="text-sm text-red-400">{turn.error}</p>
+                <p className="text-sm text-red-600">{turn.error}</p>
               ) : turn.response ? (
                 <ResponseCard response={turn.response} />
               ) : (
@@ -217,7 +217,7 @@ function CopilotChat() {
             }
             className={`rounded-xl border px-3 text-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               voice.isListening
-                ? 'animate-pulse border-red-500 bg-red-500/15 text-red-400'
+                ? 'animate-pulse border-red-500 bg-red-500/15 text-red-600'
                 : 'border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:border-[var(--series-1)]'
             }`}
           >
@@ -240,7 +240,7 @@ function CopilotChat() {
           <button
             type="submit"
             disabled={isBusy || !input.trim()}
-            className="rounded-xl bg-[#1c5cab] px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="rounded-xl btn-primary px-6 py-3 text-sm disabled:opacity-40"
           >
             Ask
           </button>
@@ -254,12 +254,12 @@ function CopilotChat() {
                 setShouldSpeakAnswers(event.target.checked);
                 if (!event.target.checked) voice.stopSpeaking();
               }}
-              className="accent-[#1c5cab]"
+              className="accent-[var(--accent)]"
             />
             🔊 Read answers aloud
           </label>
           {voice.recognitionError && (
-            <p className="text-xs text-red-400">{voice.recognitionError}</p>
+            <p className="text-xs text-red-600">{voice.recognitionError}</p>
           )}
           {shouldSpeakAnswers && isKannada && !voice.hasKannadaVoice && (
             <p className="text-xs text-amber-400">

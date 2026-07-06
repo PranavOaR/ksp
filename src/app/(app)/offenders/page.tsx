@@ -43,9 +43,9 @@ export default function OffendersPage() {
             key={category}
             type="button"
             onClick={() => setCategoryFilter(category)}
-            className={`rounded-lg px-3 py-1.5 text-xs transition-colors ${
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
               categoryFilter === category
-                ? 'bg-[#1c5cab] text-white'
+                ? 'bg-[var(--accent)] text-white'
                 : 'border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >

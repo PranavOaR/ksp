@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/clientApi';
 import type { AuditEntry } from '@/lib/audit';
 import { Card, ErrorState, LoadingState, PageHeader } from '@/components/ui';
+import { RoleGate } from '@/components/RoleGate';
 
 const ACTION_LABELS: Record<string, string> = {
   chat_query: 'Copilot query',
@@ -16,7 +17,7 @@ const ACTION_LABELS: Record<string, string> = {
   view_case: 'Opened case file',
 };
 
-export default function AuditPage() {
+function AuditPageInner() {
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,5 +69,13 @@ export default function AuditPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function AuditPage() {
+  return (
+    <RoleGate allow={['Supervisor', 'Administrator']}>
+      <AuditPageInner />
+    </RoleGate>
   );
 }

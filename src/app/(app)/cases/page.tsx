@@ -89,7 +89,7 @@ export default function CasesPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((previous) => previous - 1)}
-            className="rounded-lg border border-[var(--border-1)] px-3 py-1.5 disabled:opacity-40"
+            className="btn-ghost px-4 py-1.5 disabled:opacity-40"
           >
             ← Previous
           </button>
@@ -100,7 +100,7 @@ export default function CasesPage() {
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((previous) => previous + 1)}
-            className="rounded-lg border border-[var(--border-1)] px-3 py-1.5 disabled:opacity-40"
+            className="btn-ghost px-4 py-1.5 disabled:opacity-40"
           >
             Next →
           </button>

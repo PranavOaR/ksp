@@ -8,12 +8,12 @@ const HEIGHT = 560;
 const ITERATIONS = 260;
 
 const KIND_COLORS: Record<GraphNode['kind'], string> = {
-  person: '#3987e5',
-  fir: '#c98500',
-  phone: '#199e70',
-  vehicle: '#d95926',
-  bank_account: '#9085e9',
-  station: '#e66767',
+  person: '#2a78d6',
+  fir: '#d9541e',
+  phone: '#1b8a66',
+  vehicle: '#7c5cd6',
+  bank_account: '#c73535',
+  station: '#8f8878',
 };
 
 const KIND_LABELS: Record<GraphNode['kind'], string> = {
@@ -106,6 +106,7 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
   }, [hoveredId, graph.edges]);
 
   const usedKinds = [...new Set(graph.nodes.map((node) => node.kind))];
+  const showAllLabels = nodes.length <= 30;
 
   return (
     <div>
@@ -134,7 +135,7 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
-                stroke="#243149"
+                stroke="#d8cfbc"
                 strokeWidth={1}
                 opacity={isDimmed ? 0.25 : 0.9}
               />
@@ -157,17 +158,17 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
                   cy={node.y}
                   r={radius}
                   fill={KIND_COLORS[node.kind]}
-                  stroke="#0b1220"
+                  stroke="#fcfaf5"
                   strokeWidth={2}
                 />
-                {(isRoot || node.kind === 'person' || hoveredId === node.id) && (
+                {(showAllLabels || isRoot || node.kind === 'person' || hoveredId === node.id) && (
                   <text
                     x={node.x}
                     y={node.y - radius - 5}
                     textAnchor="middle"
                     fontSize={isRoot ? 12 : 10}
                     fontWeight={isRoot ? 700 : 400}
-                    fill={isRoot ? '#e8edf6' : '#9aa8c0'}
+                    fill={isRoot ? '#1b1813' : '#57534a'}
                   >
                     {node.label}
                   </text>

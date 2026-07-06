@@ -74,7 +74,7 @@ export default function NetworkPage() {
                       }
                       className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                         selected?.personId === ring.members[memberIndex]
-                          ? 'bg-[#1c5cab] text-white'
+                          ? 'bg-[var(--accent)] text-white'
                           : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                     >
@@ -105,7 +105,7 @@ export default function NetworkPage() {
                   onClick={() => setHops(option)}
                   className={`rounded px-2 py-1 ${
                     hops === option
-                      ? 'bg-[#1c5cab] text-white'
+                      ? 'bg-[var(--accent)] text-white'
                       : 'bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
                   }`}
                 >

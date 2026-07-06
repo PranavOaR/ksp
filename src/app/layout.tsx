@@ -1,11 +1,19 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Archivo, Geist_Mono, Source_Serif_4 } from 'next/font/google';
 import './globals.css';
 import { APP_FULL_NAME } from '@/lib/constants';
-import { Sidebar } from '@/components/Sidebar';
-import { TopBar } from '@/components/TopBar';
+import { LanguageProvider } from '@/lib/i18n';
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
+const archivo = Archivo({
+  variable: '--font-archivo',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+});
+const serifNote = Source_Serif_4({
+  variable: '--font-serif-note',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+});
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -16,15 +24,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body className="min-h-screen">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <TopBar />
-            <main className="flex-1 overflow-x-hidden p-6">{children}</main>
-          </div>
-        </div>
+    <html
+      lang="en"
+      className={`${archivo.variable} ${serifNote.variable} ${geistMono.variable} antialiased`}
+    >
+      <body className="min-h-screen font-sans">
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

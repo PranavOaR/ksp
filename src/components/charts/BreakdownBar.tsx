@@ -46,7 +46,7 @@ export function BreakdownBar({
             tickLine={false}
             axisLine={{ stroke: CHART.grid }}
           />
-          <Tooltip contentStyle={CHART.tooltip} cursor={{ fill: 'rgba(57,135,229,0.08)' }} />
+          <Tooltip contentStyle={CHART.tooltip} cursor={{ fill: 'rgba(217,84,30,0.08)' }} />
           <Bar dataKey="count" name="FIRs" fill={color} radius={[0, 4, 4, 0]} barSize={14} />
         </BarChart>
       </ResponsiveContainer>
@@ -81,7 +81,7 @@ export function DistributionBar({
             axisLine={false}
             allowDecimals={false}
           />
-          <Tooltip contentStyle={CHART.tooltip} cursor={{ fill: 'rgba(25,158,112,0.08)' }} />
+          <Tooltip contentStyle={CHART.tooltip} cursor={{ fill: 'rgba(42,120,214,0.08)' }} />
           <Bar dataKey="count" name="FIRs" fill={color} radius={[4, 4, 0, 0]} barSize={12} />
         </BarChart>
       </ResponsiveContainer>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sessionFromRequest } from './auth';
 
 export interface ApiEnvelope<T> {
   success: boolean;
@@ -14,7 +15,10 @@ export function fail(message: string, status = 400): NextResponse<ApiEnvelope<ne
   return NextResponse.json({ success: false, data: null, error: message }, { status });
 }
 
+/** Audit identity: the authenticated session wins; legacy header is a fallback. */
 export function roleFromRequest(request: Request): string {
+  const session = sessionFromRequest(request);
+  if (session) return session.role;
   return request.headers.get('x-drishti-role') ?? 'Investigator';
 }
 

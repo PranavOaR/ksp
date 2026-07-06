@@ -31,7 +31,7 @@ function PersonList({
             </span>
           </div>
           {typeof person.priorCases === 'number' && person.priorCases > 1 && (
-            <span className="rounded bg-red-500/15 px-2 py-0.5 text-[11px] text-red-400">
+            <span className="rounded bg-red-500/15 px-2 py-0.5 text-[11px] text-red-600">
               {person.priorCases} cases on record
             </span>
           )}
@@ -84,7 +84,7 @@ export default function CaseDetailPage() {
         </p>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="stagger grid gap-6 lg:grid-cols-2">
         <Card title="Accused">
           <PersonList people={data.accused} emptyLabel="No accused identified yet." />
         </Card>
@@ -93,7 +93,7 @@ export default function CaseDetailPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="stagger grid gap-6 lg:grid-cols-2">
         <Card title="Investigation timeline" subtitle="Chronology of recorded events (F2)">
           <ol className="relative space-y-4 border-l border-[var(--border-1)] pl-5">
             {data.timeline.map((entry, index) => (
