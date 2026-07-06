@@ -1,6 +1,7 @@
 import { roleFromRequest, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
+import { workspaceFromRequest } from '@/lib/workspace';
 import { detectCrimeRings } from '@/lib/intel/gangs';
 import { detectHotspots, type RegionCount } from '@/lib/intel/hotspots';
 import { getCoAccusedPairs, getOffenderProfiles } from '@/lib/intel/offenders';
@@ -10,7 +11,7 @@ const PREVIOUS_WINDOW_START = '2026-01-01';
 
 export async function GET(request: Request) {
   return withErrorHandling(() => {
-    const db = getDb();
+    const db = getDb(workspaceFromRequest(request));
     logAudit(db, roleFromRequest(request), 'view_overview', 'command dashboard');
 
     const totals = db

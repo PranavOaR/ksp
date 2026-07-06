@@ -1,6 +1,7 @@
 import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
+import { workspaceFromRequest } from '@/lib/workspace';
 import { isLlmEnabled, llmComposeAnswer, llmParseQuery } from '@/lib/intel/llm';
 import type { CopilotLanguage } from '@/lib/intel/llmCoerce';
 import { parseQuery } from '@/lib/intel/queryParser';
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
   }
 
   return withErrorHandling(async () => {
-    const db = getDb();
+    const db = getDb(workspaceFromRequest(request));
     const role = roleFromRequest(request);
     const { parsed, language, engine } = await understand(body.message, body.context);
     const result = executeQuery(db, parsed.filter);

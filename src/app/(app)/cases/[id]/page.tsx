@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/clientApi';
+import { FIR_STATUSES } from '@/lib/constants';
 import type { CaseIntelligence } from '@/lib/intel/caseIntel';
 import { Card, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/ui';
 
@@ -53,6 +54,16 @@ export default function CaseDetailPage() {
       .catch((err: Error) => setError(err.message));
   }, [params.id]);
 
+  const updateStatus = async (status: string) => {
+    if (!data) return;
+    try {
+      await apiFetch(`/api/cases/${params.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      setData({ ...data, fir: { ...data.fir, status } });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Status update failed');
+    }
+  };
+
   if (error) return <ErrorState message={error} />;
   if (!data) return <LoadingState label="Assembling case intelligence…" />;
 
@@ -68,6 +79,16 @@ export default function CaseDetailPage() {
       <Card title="Automated case summary" subtitle="Generated from FIR record and linked entities (F1)">
         <div className="mb-3 flex items-center gap-3">
           <StatusBadge status={fir.status} />
+          <select
+            value={fir.status}
+            onChange={(event) => void updateStatus(event.target.value)}
+            className="btn-ghost px-3 py-1 text-xs outline-none"
+            title="Update case status (audit-logged)"
+          >
+            {FIR_STATUSES.map((statusOption) => (
+              <option key={statusOption}>{statusOption}</option>
+            ))}
+          </select>
           <span className="text-xs text-[var(--text-muted)]">
             Occurred {fir.occurred_at.replace('T', ' at ')}
           </span>

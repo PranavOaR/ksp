@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/clientApi';
 import { Card, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/ui';
+import { useUser } from '@/components/UserProvider';
 
 interface CaseRow {
   id: number;
@@ -21,6 +22,7 @@ interface CasesResponse {
 }
 
 export default function CasesPage() {
+  const user = useUser();
   const [data, setData] = useState<CasesResponse | null>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +40,35 @@ export default function CasesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Case Files"
-        subtitle={`${data.meta.total} FIRs on record — open any case for the AI summary, timeline, similar cases and leads (Module F)`}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeader
+          title="Case Files"
+          subtitle={`${data.meta.total} FIRs on record — open any case for the AI summary, timeline, similar cases and leads (Module F)`}
+        />
+        <div className="flex shrink-0 gap-2">
+          {(user.role === 'Supervisor' || user.role === 'Administrator') && (
+            <Link href="/cases/import" className="btn-ghost px-4 py-2.5 text-xs">
+              ⬆ Bulk import
+            </Link>
+          )}
+          <Link href="/cases/new" className="btn-primary px-5 py-2.5 text-xs">
+            + New Case File
+          </Link>
+        </div>
+      </div>
 
+      {data.meta.total === 0 ? (
+        <Card title="No case files yet">
+          <p className="text-sm text-[var(--text-secondary)]">
+            This is the Live workspace — it holds your unit&apos;s own records and starts empty.
+            Register your first case file or bulk-import from CSV, and every intelligence module
+            (Copilot, networks, hotspots, forecasts) will compute from your real data.
+          </p>
+          <Link href="/cases/new" className="btn-primary mt-4 inline-block px-5 py-2.5 text-xs">
+            + Register first case file
+          </Link>
+        </Card>
+      ) : (
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -106,6 +132,7 @@ export default function CasesPage() {
           </button>
         </div>
       </Card>
+      )}
     </div>
   );
 }

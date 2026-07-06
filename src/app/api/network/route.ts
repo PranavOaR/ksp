@@ -1,6 +1,7 @@
 import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
+import { workspaceFromRequest } from '@/lib/workspace';
 import { detectCrimeRings } from '@/lib/intel/gangs';
 import { buildNetwork } from '@/lib/intel/network';
 import { getCoAccusedPairs } from '@/lib/intel/offenders';
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   return withErrorHandling(() => {
-    const db = getDb();
+    const db = getDb(workspaceFromRequest(request));
     const role = roleFromRequest(request);
 
     if (personIdParam) {

@@ -1,6 +1,7 @@
 import { roleFromRequest, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
+import { workspaceFromRequest } from '@/lib/workspace';
 import { forecastMonthly, type MonthlyPoint } from '@/lib/intel/forecast';
 import { detectHotspots, type RegionCount } from '@/lib/intel/hotspots';
 
@@ -10,7 +11,7 @@ const PREVIOUS_WINDOW_START = '2026-01-01';
 
 export async function GET(request: Request) {
   return withErrorHandling(() => {
-    const db = getDb();
+    const db = getDb(workspaceFromRequest(request));
     logAudit(db, roleFromRequest(request), 'view_analytics', 'analytics dashboard');
 
     const monthly = db

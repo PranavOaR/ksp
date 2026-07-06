@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useUser } from './UserProvider';
+import { WorkspaceSwitch } from './WorkspaceSwitch';
 import { LangToggle, useLanguage } from '@/lib/i18n';
 
 function greetingKeyForHour(hour: number): 'chrome.goodMorning' | 'chrome.goodAfternoon' | 'chrome.goodEvening' {
@@ -38,6 +39,7 @@ export function TopBar() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+        <WorkspaceSwitch />
         <LangToggle />
         <button
           type="button"

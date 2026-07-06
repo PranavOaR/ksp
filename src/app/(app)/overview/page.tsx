@@ -99,6 +99,8 @@ export default function OverviewPage() {
 
   const focus = ROLE_FOCUS[user.role];
 
+  const isEmpty = data.kpis.totalFirs === 0;
+
   const blocks: Record<BlockKey, React.ReactNode> = {
     alerts: (
       <Card key="alerts" title={t('overview.alerts.title')} subtitle={t('overview.alerts.subtitle')}>
@@ -189,7 +191,33 @@ export default function OverviewPage() {
           {t('overview.title')}<span className="text-[var(--accent)]">.</span>
         </h1>
         <p className="font-serif-note mt-2 text-[15px] text-[var(--text-secondary)]">{t(`overview.note.${user.role}`)}</p>
+        {user.role === 'Administrator' && (
+          <button
+            type="button"
+            onClick={() => {
+              void apiFetch('/api/admin/reset-demo', { method: 'POST' }).then(() => window.location.reload());
+            }}
+            className="btn-ghost mt-3 px-4 py-1.5 text-xs"
+            title="Restores the Demo workspace to its original seeded dataset"
+          >
+            ↺ Reset demo data
+          </button>
+        )}
       </div>
+
+      {isEmpty && (
+        <Card title="Live workspace is empty">
+          <p className="text-sm text-[var(--text-secondary)]">
+            You are viewing your unit&apos;s Live data and no case files exist yet. Add records and
+            every module — Copilot answers, networks, risk scores, hotspots, forecasts — will
+            compute from your real data. Switch to Demo in the top bar to explore with synthetic
+            data.
+          </p>
+          <Link href="/cases/new" className="btn-primary mt-4 inline-block px-5 py-2.5 text-xs">
+            + Register first case file
+          </Link>
+        </Card>
+      )}
 
       <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-5">
         {KPI_DEFS.map(({ key, labelKey, suffix }) => (

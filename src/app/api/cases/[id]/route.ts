@@ -1,7 +1,42 @@
 import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
+import { sessionFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
+import { workspaceFromRequest } from '@/lib/workspace';
 import { buildCaseIntelligence } from '@/lib/intel/caseIntel';
+import { updateCaseStatus } from '@/lib/intel/createCase';
+
+/** Update case status: Open → Under Investigation → Solved (PRD F1). */
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  const session = sessionFromRequest(request);
+  if (!session) {
+    return fail('Sign in required.', 401);
+  }
+  const { id } = await context.params;
+  const firId = Number(id);
+  if (!Number.isInteger(firId) || firId <= 0) {
+    return fail('Case id must be a positive integer.');
+  }
+  const body = (await request.json().catch(() => null)) as { status?: string } | null;
+  if (!body?.status) {
+    return fail('status is required.');
+  }
+
+  return withErrorHandling(() => {
+    const db = getDb(workspaceFromRequest(request));
+    const updated = updateCaseStatus(db, firId, body.status!);
+    if (!updated) {
+      throw new Error('Invalid status or case not found');
+    }
+    logAudit(
+      db,
+      session.role,
+      'update_case_status',
+      `case ${firId} → ${body.status} by ${session.rank} ${session.name}`
+    );
+    return { updated: true, status: body.status };
+  });
+}
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -11,7 +46,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   }
 
   return withErrorHandling(() => {
-    const db = getDb();
+    const db = getDb(workspaceFromRequest(request));
     const intelligence = buildCaseIntelligence(db, firId);
     if (!intelligence) {
       throw new Error(`Case ${firId} not found`);

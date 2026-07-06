@@ -243,6 +243,28 @@ export function isSeeded(db: Database): boolean {
   return row.count > 0;
 }
 
+/** Live workspace: stations are reference infrastructure, not mock case data. */
+export function seedStationsOnly(db: Database): void {
+  const row = db.prepare('SELECT COUNT(*) AS count FROM stations').get() as { count: number };
+  if (row.count === 0) {
+    seedStations(db, createRng(SEED));
+  }
+}
+
+/** Clears every table and reseeds the full synthetic dataset (demo reset). */
+export function resetDemoData(db: Database): void {
+  const wipe = db.transaction(() => {
+    for (const table of [
+      'transactions', 'fir_assets', 'fir_accused', 'fir_victims',
+      'assets', 'firs', 'persons', 'stations', 'audit_log',
+    ]) {
+      db.prepare(`DELETE FROM ${table}`).run();
+    }
+  });
+  wipe();
+  seedDatabase(db);
+}
+
 export function seedDatabase(db: Database): void {
   const rng = createRng(SEED);
   const seedAll = db.transaction(() => {
