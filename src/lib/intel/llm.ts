@@ -1,0 +1,129 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+import { z } from 'zod';
+import { CRIME_TYPES, DATASET_END, DATASET_START, DISTRICTS, FIR_STATUSES } from '../constants';
+import { coerceLlmParse, type CopilotLanguage } from './llmCoerce';
+import type { FirRecord, OffenderProfile, ParsedQuery, QueryFilter } from './types';
+
+const MODEL = 'claude-haiku-4-5';
+const PARSE_MAX_TOKENS = 1024;
+const COMPOSE_MAX_TOKENS = 1024;
+const REQUEST_TIMEOUT_MS = 20_000;
+
+let cachedClient: Anthropic | null = null;
+
+export function isLlmEnabled(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+function getClient(): Anthropic {
+  if (!cachedClient) {
+    cachedClient = new Anthropic({ timeout: REQUEST_TIMEOUT_MS, maxRetries: 1 });
+  }
+  return cachedClient;
+}
+
+const ParseSchema = z.object({
+  intent: z.enum(['listFirs', 'listOffenders', 'count', 'trend']),
+  crimeType: z.enum(CRIME_TYPES).nullable(),
+  district: z.enum(DISTRICTS).nullable(),
+  status: z.enum(FIR_STATUSES).nullable(),
+  fromDate: z.string().nullable().describe('ISO date YYYY-MM-DD, or null'),
+  toDate: z.string().nullable().describe('ISO date YYYY-MM-DD, or null'),
+  isRefinement: z
+    .boolean()
+    .describe('true when the message refines the previous query instead of starting a new one'),
+  language: z.enum(['en', 'kn']).describe('Language the user wrote in'),
+  understood: z
+    .array(z.string())
+    .describe('Short English notes on what was extracted, for the audit reasoning trail'),
+});
+
+const PARSE_SYSTEM = `You translate natural-language questions from Karnataka State Police investigators into structured crime-database query filters. Questions may be in English or Kannada (ಕನ್ನಡ).
+
+Database facts:
+- Crime types: ${CRIME_TYPES.join(', ')}
+- Districts: ${DISTRICTS.join(', ')} (map aliases: Bangalore/ಬೆಂಗಳೂರು→Bengaluru City, Mysore/ಮೈಸೂರು→Mysuru, Mangalore→Mangaluru, Hubli→Hubballi-Dharwad, Gulbarga→Kalaburagi, Bellary→Ballari, Shimoga→Shivamogga, Belgaum→Belagavi, Tumkur→Tumakuru)
+- Case statuses: ${FIR_STATUSES.join(', ')}
+- Records span ${DATASET_START} to ${DATASET_END}.
+
+Rules:
+- Map Kannada crime words to the English enum values (e.g. ಕಳ್ಳತನ→Theft, ಕೊಲೆ→Murder, ದರೋಡೆ→Burglary, ಸೈಬರ್ ಅಪರಾಧ→Cybercrime, ವಂಚನೆ→Fraud).
+- intent "listOffenders" for repeat/habitual offender questions, "count" for how-many questions, "trend" for trend/forecast questions, otherwise "listFirs".
+- If a previous filter is provided and the new message narrows it (e.g. "only solved cases"), set isRefinement true and output only the newly mentioned fields.
+- Leave fields null when the user did not mention them.`;
+
+export async function llmParseQuery(
+  message: string,
+  previous?: QueryFilter
+): Promise<ParsedQuery & { language: CopilotLanguage }> {
+  const client = getClient();
+  const previousContext = previous
+    ? `Previous query filter (for refinement context): ${JSON.stringify(previous)}`
+    : 'No previous query in this conversation.';
+
+  const response = await client.messages.parse({
+    model: MODEL,
+    max_tokens: PARSE_MAX_TOKENS,
+    // Haiku 4.5 does not support the effort parameter — omit it
+    output_config: { format: zodOutputFormat(ParseSchema) },
+    system: PARSE_SYSTEM,
+    messages: [{ role: 'user', content: `${previousContext}\n\nInvestigator message: ${message}` }],
+  });
+
+  if (!response.parsed_output) {
+    throw new Error('LLM returned unparseable output');
+  }
+  return coerceLlmParse(response.parsed_output, previous);
+}
+
+/**
+ * Composes the final investigator-facing answer in the user's language
+ * (Kannada support, PRD A3). Only invoked for non-English conversations —
+ * English answers come from the deterministic summary for zero added latency.
+ */
+export async function llmComposeAnswer(input: {
+  question: string;
+  language: CopilotLanguage;
+  summary: string;
+  firs: FirRecord[];
+  offenders: OffenderProfile[];
+  totalCount: number;
+}): Promise<string> {
+  const client = getClient();
+  const facts = {
+    totalCount: input.totalCount,
+    summary: input.summary,
+    sampleFirs: input.firs.slice(0, 5).map((fir) => ({
+      firNumber: fir.fir_number,
+      crimeType: fir.crime_type,
+      district: fir.district,
+      date: fir.occurred_at.slice(0, 10),
+      status: fir.status,
+    })),
+    sampleOffenders: input.offenders.slice(0, 5).map((offender) => ({
+      name: offender.name,
+      cases: offender.caseCount,
+      risk: offender.riskCategory,
+    })),
+  };
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: COMPOSE_MAX_TOKENS,
+    system:
+      'You are DRISHTI, the Karnataka State Police crime intelligence copilot. Answer the investigator in simple, natural Kannada (ಕನ್ನಡ) in 1-3 sentences using ONLY the provided database facts. State the count and key findings factually — no opinions, warnings or recommendations. Keep FIR numbers, person names, and crime type terms (Theft, Burglary, Cybercrime etc.) in English/Latin script within the Kannada sentence. No markdown formatting.',
+    messages: [
+      {
+        role: 'user',
+        content: `Question: ${input.question}\n\nDatabase results (ground truth): ${JSON.stringify(facts)}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === 'text');
+  if (!textBlock || !('text' in textBlock) || !textBlock.text.trim()) {
+    throw new Error('LLM compose returned no text');
+  }
+  return textBlock.text.trim();
+}

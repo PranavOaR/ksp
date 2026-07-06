@@ -27,7 +27,23 @@ export function ResponseCard({ response }: { response: ChatResponse }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-[var(--text-primary)]">{response.answer}</p>
-      <ConfidenceMeter value={response.confidence} />
+      <div className="flex items-center gap-3">
+        <ConfidenceMeter value={response.confidence} />
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            response.engine === 'claude'
+              ? 'bg-[var(--series-1)]/15 text-[var(--series-1)]'
+              : 'bg-slate-500/15 text-slate-400'
+          }`}
+          title={
+            response.engine === 'claude'
+              ? 'Query understood by Claude AI'
+              : 'Query understood by the offline rule engine'
+          }
+        >
+          {response.engine === 'claude' ? '✦ Claude AI' : 'Rule engine'}
+        </span>
+      </div>
 
       {response.firs.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-[var(--border-1)]">

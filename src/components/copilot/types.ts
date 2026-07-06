@@ -11,6 +11,8 @@ export interface ChatResponse {
   confidence: number;
   isRefinement: boolean;
   filter: QueryFilter;
+  engine: 'claude' | 'rules';
+  language: 'en' | 'kn';
 }
 
 export interface ChatTurn {

@@ -25,8 +25,9 @@ npm run build && npm start  # production build
 
 | PRD module | Feature | Where |
 |---|---|---|
-| **A1** Natural-language querying | Deterministic NL → structured-query parser (crime type, district incl. aliases like "Mysore", status, month/year ranges, intent) | `src/lib/intel/queryParser.ts`, `/copilot` |
-| **A2** Context retention | Follow-ups like *"Only solved cases"* merge into the previous filter | same, `isRefinement` logic |
+| **A1** Natural-language querying | **Claude API** (`claude-opus-4-8`, structured outputs) translates free-form questions into validated query filters; deterministic rule-engine parser as automatic offline fallback | `src/lib/intel/llm.ts`, `queryParser.ts`, `/copilot` |
+| **A2** Context retention | Follow-ups like *"Only solved cases"* merge into the previous filter (both engines) | `llmCoerce.ts` / `isRefinement` logic |
+| **A3** Kannada support | Ask in ಕನ್ನಡ, get answers in ಕನ್ನಡ grounded in real database results (English fields like FIR numbers preserved) | `llm.ts` language detection + compose |
 | **A5** Conversation export | CSV export with queries, answers, confidence, evidence refs, timestamps | `/copilot` → Export CSV |
 | **B1/B3** Network graph + entity explorer | 2–3-hop BFS across persons, FIRs, phones, vehicles, bank accounts; custom SVG force layout | `src/lib/intel/network.ts`, `/network` |
 | **B2** Organized crime detection | Union-find clustering of repeat co-accused → crime rings (recovers all 5 seeded gangs) | `src/lib/intel/gangs.ts` |
@@ -40,7 +41,9 @@ npm run build && npm start  # production build
 | **J1** RBAC-lite | Role switcher (Investigator/Analyst/Supervisor/Administrator); role tags every audit row | top bar |
 | **J2** Audit logging | Every query, view, and export logged | `src/lib/audit.ts`, `/audit` |
 
-Not yet built (next phases): Kannada/multilingual support (A3), voice interface (A4), PDF export, LLM-backed query translation (the parser is pluggable — swap `parseQuery` for a Claude API call), sociological module (D), full money-trail visualization (G2), real RBAC with JWT auth.
+To enable the Claude-powered Copilot, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot transparently uses the offline rule engine — every response is badged with the engine that produced it.
+
+Not yet built (next phases): Hindi/Tamil/Telugu (A3 future languages), voice interface (A4), PDF export, sociological module (D), full money-trail visualization (G2), real RBAC with JWT auth.
 
 ## Architecture
 
