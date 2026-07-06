@@ -1,65 +1,142 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { apiFetch } from '@/lib/clientApi';
+import { Card, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/ui';
+
+interface OverviewData {
+  kpis: {
+    totalFirs: number;
+    solvedRate: number;
+    repeatOffenders: number;
+    highRiskOffenders: number;
+    crimeRings: number;
+  };
+  alerts: Array<{ district: string; growthPercent: number; message: string }>;
+  recentFirs: Array<{
+    id: number;
+    fir_number: string;
+    crime_type: string;
+    district: string;
+    occurred_at: string;
+    status: string;
+  }>;
+}
+
+const KPI_DEFS: Array<{ key: keyof OverviewData['kpis']; label: string; suffix?: string }> = [
+  { key: 'totalFirs', label: 'FIRs on record' },
+  { key: 'solvedRate', label: 'Solved rate', suffix: '%' },
+  { key: 'repeatOffenders', label: 'Repeat offenders' },
+  { key: 'highRiskOffenders', label: 'High-risk offenders' },
+  { key: 'crimeRings', label: 'Crime rings detected' },
+];
+
+export default function OverviewPage() {
+  const [data, setData] = useState<OverviewData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch<OverviewData>('/api/overview').then(setData).catch((err: Error) => setError(err.message));
+  }, []);
+
+  if (error) return <ErrorState message={error} />;
+  if (!data) return <LoadingState />;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="space-y-6">
+      <PageHeader
+        title="Command Overview"
+        subtitle="Live intelligence picture across 10 districts — synthetic demonstration data"
+      />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        {KPI_DEFS.map(({ key, label, suffix }) => (
+          <div key={key} className="card p-4">
+            <div className="text-2xl font-bold text-[var(--text-primary)]">
+              {data.kpis[key]}
+              {suffix ?? ''}
+            </div>
+            <div className="mt-1 text-xs text-[var(--text-secondary)]">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card title="Early warning alerts" subtitle="Emerging hotspots this quarter (Module H2)">
+          {data.alerts.length === 0 ? (
+            <p className="text-sm text-[var(--text-muted)]">No emerging hotspots detected.</p>
+          ) : (
+            <ul className="space-y-2">
+              {data.alerts.map((alert) => (
+                <li
+                  key={alert.district}
+                  className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-sm text-amber-200/90"
+                >
+                  <span aria-hidden>⚠</span>
+                  {alert.message}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-4 text-xs text-[var(--text-muted)]">
+            Full temporal, geographic and forecast views in{' '}
+            <Link href="/analytics" className="text-[var(--series-1)] hover:underline">
+              Analytics
+            </Link>
+            .
           </p>
+        </Card>
+
+        <Card title="Latest FIRs" subtitle="Most recently registered cases">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-xs text-[var(--text-muted)]">
+                  <th className="pb-2 pr-3 font-medium">FIR</th>
+                  <th className="pb-2 pr-3 font-medium">Type</th>
+                  <th className="pb-2 pr-3 font-medium">District</th>
+                  <th className="pb-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recentFirs.map((fir) => (
+                  <tr key={fir.id} className="border-t border-[var(--border-1)]">
+                    <td className="py-2 pr-3">
+                      <Link href={`/cases/${fir.id}`} className="text-[var(--series-1)] hover:underline">
+                        {fir.fir_number}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3 text-[var(--text-secondary)]">{fir.crime_type}</td>
+                    <td className="py-2 pr-3 text-[var(--text-secondary)]">{fir.district}</td>
+                    <td className="py-2">
+                      <StatusBadge status={fir.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="Ask the Copilot" subtitle="Natural-language access to the crime database (Module A)">
+        <div className="flex flex-wrap gap-2">
+          {[
+            'Show all burglary FIRs in Bengaluru during March 2026',
+            'List repeat offenders involved in cybercrime',
+            'How many vehicle thefts in Mysuru in 2025?',
+          ].map((example) => (
+            <Link
+              key={example}
+              href={`/copilot?q=${encodeURIComponent(example)}`}
+              className="rounded-full border border-[var(--border-1)] bg-[var(--surface-2)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--series-1)] hover:text-[var(--text-primary)]"
+            >
+              “{example}”
+            </Link>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </Card>
     </div>
   );
 }

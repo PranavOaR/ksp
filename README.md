@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DRISHTI — KSP Crime Intelligence Copilot
 
-## Getting Started
+> ದೃಷ್ಟಿ (*Drishti*, "vision") — **D**ata-driven **R**apid **I**nvestigation & **S**trategic **H**olistic **T**hreat **I**ntelligence
 
-First, run the development server:
+An AI-powered investigative intelligence platform for Karnataka State Police: natural-language access to crime records, criminal network discovery, offender risk profiling, hotspot detection, and crime forecasting — with explainable, evidence-backed, fully audited answers.
+
+**All data in this repository is synthetic**, generated deterministically for demonstration. No real crime records, people, or identifiers are used.
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The SQLite database (`data/drishti.db`) is created and seeded automatically on first request — 480 FIRs, 220 persons, 5 planted crime rings, assets, and transactions across 10 Karnataka districts (2024-01 → 2026-06).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test                    # vitest unit + integration suites
+npx vitest run --coverage   # coverage report (95%+ on the intel core)
+npm run build && npm start  # production build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What's implemented (PRD module map)
 
-## Learn More
+| PRD module | Feature | Where |
+|---|---|---|
+| **A1** Natural-language querying | Deterministic NL → structured-query parser (crime type, district incl. aliases like "Mysore", status, month/year ranges, intent) | `src/lib/intel/queryParser.ts`, `/copilot` |
+| **A2** Context retention | Follow-ups like *"Only solved cases"* merge into the previous filter | same, `isRefinement` logic |
+| **A5** Conversation export | CSV export with queries, answers, confidence, evidence refs, timestamps | `/copilot` → Export CSV |
+| **B1/B3** Network graph + entity explorer | 2–3-hop BFS across persons, FIRs, phones, vehicles, bank accounts; custom SVG force layout | `src/lib/intel/network.ts`, `/network` |
+| **B2** Organized crime detection | Union-find clustering of repeat co-accused → crime rings (recovers all 5 seeded gangs) | `src/lib/intel/gangs.ts` |
+| **C1/C2** Temporal + geographic analytics | Monthly trend, hour-of-day, district and crime-type breakdowns | `/analytics` |
+| **C3** Hotspot detection | Intensity ranking + emerging-cluster flags (quarter-over-quarter growth) | `src/lib/intel/hotspots.ts` |
+| **E1–E3** Offender profiling + risk scoring | Repeat-offender register; explainable weighted score (priors, network degree, recency, versatility) → Low/Medium/High | `src/lib/intel/riskScoring.ts`, `/offenders` |
+| **F1–F4** Investigator decision support | Auto case summary, timeline, similar-case retrieval (MO/type/location), suggested leads incl. financial referrals | `src/lib/intel/caseIntel.ts`, `/cases/[id]` |
+| **G (partial)** Financial links | Seeded transaction rings; high-value transaction leads on case pages | `seed.ts`, `caseIntel.ts` |
+| **H1–H3** Forecasting + early warning | Least-squares 3-month forecast; emerging-hotspot alerts on the overview | `src/lib/intel/forecast.ts`, `/`, `/analytics` |
+| **I1–I3** Explainable AI | Every answer carries evidence (FIR numbers), a reasoning trail, and a confidence score | `/copilot` response cards |
+| **J1** RBAC-lite | Role switcher (Investigator/Analyst/Supervisor/Administrator); role tags every audit row | top bar |
+| **J2** Audit logging | Every query, view, and export logged | `src/lib/audit.ts`, `/audit` |
 
-To learn more about Next.js, take a look at the following resources:
+Not yet built (next phases): Kannada/multilingual support (A3), voice interface (A4), PDF export, LLM-backed query translation (the parser is pluggable — swap `parseQuery` for a Claude API call), sociological module (D), full money-trail visualization (G2), real RBAC with JWT auth.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/                # Next.js App Router
+│   ├── api/            # chat, analytics, network, offenders, cases, overview, audit
+│   └── (pages)         # /, /copilot, /network, /analytics, /offenders, /cases, /audit
+├── components/         # UI: sidebar, charts (Recharts), SVG network graph, copilot cards
+└── lib/
+    ├── db/             # better-sqlite3 client, schema, deterministic seeder
+    ├── intel/          # PURE intelligence core — parser, executor, risk, hotspots,
+    │                   # forecast, gangs, network, case intel (95%+ test coverage)
+    └── audit.ts        # J2 audit logging
+```
 
-## Deploy on Vercel
+Design notes:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Intelligence core is pure and DB-agnostic where possible** — parser, risk scorer, hotspot detector, forecaster, and ring detector take plain data in and return plain data out, so they're unit-tested without any database.
+- **Seeded RNG** (`mulberry32`) makes the demo dataset identical on every machine.
+- **API envelope** is uniform: `{ success, data, error }`; failures log server-side and return generic messages.
+- Chart palette follows a CVD-validated dark-mode palette (all contrast/colorblind checks pass).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Demo script (2 minutes)
+
+1. **Overview** — KPIs, 3 emerging-hotspot alerts.
+2. **Copilot** — ask *"Show theft cases in Mysuru"*, then *"Only solved cases"* (context retention); expand the reasoning trail; export CSV.
+3. **Network Intel** — open Ring #1, click a member, watch the 2-hop entity graph; bump to 3 hops.
+4. **Analytics** — trend line with dashed forecast; night-hour concentration; emerging hotspots in amber.
+5. **Offenders** — filter High risk; note explainable score bars.
+6. **Case file** — open any FIR: summary, timeline, similar cases by identical MO, leads (including financial referrals).
+7. **Audit** — everything you just did is logged with your role.
