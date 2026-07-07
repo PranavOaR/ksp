@@ -6,8 +6,13 @@
  *   - Karnataka District-wise data: https://censusindia.gov.in/census.website/
  *
  * Only the 10 districts modelled in DRISHTI's synthetic dataset are included.
- * Population figures are approximate district-level totals from Census 2011.
- * Literacy and urbanisation figures are from the 2011 Primary Census Abstract.
+ * District names follow the app's dataset labels; two map to official census
+ * districts under different names: "Mangaluru" = Dakshina Kannada district,
+ * "Hubballi-Dharwad" = Dharwad district.
+ *
+ * Population and literacy figures are the official 2011 Census values.
+ * Urbanisation figures are approximate (rounded % of population classed
+ * urban in 2011) — adequate for correlation analysis, not for citation.
  */
 
 export interface CensusDistrict {
@@ -22,14 +27,14 @@ export interface CensusDistrict {
 
 /** Static 2011 Census data for the 10 DRISHTI districts. */
 export const CENSUS_DATA: CensusDistrict[] = [
-  { district: 'Bengaluru City',    population: 9621551, literacyPct: 88.5, urbanizationPct: 98.0 },
-  { district: 'Bengaluru Rural',   population: 990923,  literacyPct: 75.0, urbanizationPct: 20.0 },
-  { district: 'Mysuru',            population: 3001127, literacyPct: 72.4, urbanizationPct: 38.0 },
-  { district: 'Mangaluru',         population: 2089649, literacyPct: 83.8, urbanizationPct: 42.0 },
-  { district: 'Hubballi-Dharwad',  population: 1791936, literacyPct: 74.8, urbanizationPct: 56.0 },
-  { district: 'Belagavi',          population: 4779661, literacyPct: 67.1, urbanizationPct: 25.0 },
-  { district: 'Kalaburagi',        population: 2564892, literacyPct: 58.9, urbanizationPct: 30.0 },
-  { district: 'Shivamogga',        population: 1755396, literacyPct: 76.9, urbanizationPct: 36.0 },
-  { district: 'Tumakuru',          population: 2681449, literacyPct: 73.4, urbanizationPct: 25.0 },
-  { district: 'Ballari',           population: 2532383, literacyPct: 62.1, urbanizationPct: 38.0 },
+  { district: 'Bengaluru City',    population: 9621551, literacyPct: 87.67, urbanizationPct: 91 },
+  { district: 'Bengaluru Rural',   population: 990923,  literacyPct: 77.93, urbanizationPct: 27 },
+  { district: 'Mysuru',            population: 3001127, literacyPct: 72.79, urbanizationPct: 41 },
+  { district: 'Mangaluru',         population: 2089649, literacyPct: 88.57, urbanizationPct: 48 },
+  { district: 'Hubballi-Dharwad',  population: 1847023, literacyPct: 80.00, urbanizationPct: 57 },
+  { district: 'Belagavi',          population: 4779661, literacyPct: 73.48, urbanizationPct: 25 },
+  { district: 'Kalaburagi',        population: 2566326, literacyPct: 64.85, urbanizationPct: 33 },
+  { district: 'Shivamogga',        population: 1752753, literacyPct: 80.45, urbanizationPct: 36 },
+  { district: 'Tumakuru',          population: 2678980, literacyPct: 75.14, urbanizationPct: 22 },
+  { district: 'Ballari',           population: 2452595, literacyPct: 67.43, urbanizationPct: 38 },
 ];
