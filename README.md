@@ -20,10 +20,10 @@ The SQLite database (`data/drishti.db`) is created and seeded automatically on f
 
 | Role | Username | Password | Access |
 |---|---|---|---|
-| **Investigator** | `inv` | `demo` | Copilot, Cases, Network, Offenders, Analytics, Sociology |
-| **Analyst** | `analyst` | `demo` | + Financial Intel |
-| **Supervisor** | `supervisor` | `demo` | + Audit trail, case status updates |
-| **Administrator** | `admin` | `demo` | Full access |
+| **Investigator** | `investigator` | `drishti123` | Copilot, Cases, Network, Offenders, Analytics, Sociology |
+| **Analyst** | `analyst` | `drishti123` | + Financial Intel |
+| **Supervisor** | `supervisor` | `drishti123` | + Audit trail, case status updates |
+| **Administrator** | `admin` | `drishti123` | Full access |
 
 > **To enable Claude-powered Copilot:** put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot uses the offline rule engine — every response is badged with the engine that produced it.
 
