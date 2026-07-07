@@ -8,6 +8,14 @@ import { FIR_STATUSES } from '@/lib/constants';
 import type { CaseIntelligence } from '@/lib/intel/caseIntel';
 import { Card, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/ui';
 
+interface MOSerialPattern {
+  isSerial: boolean;
+  clusterSize: number;
+  mo: string;
+}
+
+type CaseDetailData = CaseIntelligence & { moSerialPattern: MOSerialPattern };
+
 function PersonList({
   people,
   emptyLabel,
@@ -44,12 +52,12 @@ function PersonList({
 
 export default function CaseDetailPage() {
   const params = useParams<{ id: string }>();
-  const [data, setData] = useState<CaseIntelligence | null>(null);
+  const [data, setData] = useState<CaseDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!params.id) return;
-    apiFetch<CaseIntelligence>(`/api/cases/${params.id}`)
+    apiFetch<CaseDetailData>(`/api/cases/${params.id}`)
       .then(setData)
       .catch((err: Error) => setError(err.message));
   }, [params.id]);
@@ -67,7 +75,7 @@ export default function CaseDetailPage() {
   if (error) return <ErrorState message={error} />;
   if (!data) return <LoadingState label="Assembling case intelligence…" />;
 
-  const { fir } = data;
+  const { fir, moSerialPattern } = data;
 
   return (
     <div className="space-y-6">
@@ -75,6 +83,18 @@ export default function CaseDetailPage() {
         title={fir.fir_number}
         subtitle={`${fir.crime_type} · ${fir.district} · ${fir.station_name}`}
       />
+
+      {/* A3: Serial MO banner — shown only when this FIR shares its MO with ≥1 other case */}
+      {moSerialPattern.isSerial && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+          <span className="mt-0.5 text-amber-500" aria-hidden>⚠</span>
+          <p className="text-sm text-amber-700">
+            <span className="font-semibold">Part of a series of {moSerialPattern.clusterSize} cases</span>{' '}
+            sharing the same modus operandi:{' '}
+            <span className="italic">"{moSerialPattern.mo}"</span>. Review linked cases for serial offender patterns.
+          </p>
+        </div>
+      )}
 
       <Card title="Automated case summary" subtitle="Generated from FIR record and linked entities (F1)">
         <div className="mb-3 flex items-center gap-3">
