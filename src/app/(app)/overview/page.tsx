@@ -120,9 +120,9 @@ export default function OverviewPage() {
           </ul>
         )}
         <p className="mt-4 text-xs text-[var(--text-muted)]">
-          Full temporal, geographic and forecast views in{' '}
+          {t('overview.alerts.more')}{' '}
           <Link href="/analytics" className="text-[var(--accent)] hover:underline">
-            Analytics
+            {t('nav.analytics')}
           </Link>
           .
         </p>
@@ -134,10 +134,10 @@ export default function OverviewPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--text-muted)]">
-                <th className="pb-2 pr-3 font-medium">FIR</th>
-                <th className="pb-2 pr-3 font-medium">Type</th>
-                <th className="pb-2 pr-3 font-medium">District</th>
-                <th className="pb-2 font-medium">Status</th>
+                <th className="pb-2 pr-3 font-medium">{t('copilot.response.fir')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('copilot.response.type')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('copilot.response.district')}</th>
+                <th className="pb-2 font-medium">{t('copilot.response.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -200,21 +200,16 @@ export default function OverviewPage() {
             className="btn-ghost mt-3 px-4 py-1.5 text-xs"
             title="Restores the Demo workspace to its original seeded dataset"
           >
-            ↺ Reset demo data
+            {t('overview.resetDemo')}
           </button>
         )}
       </div>
 
       {isEmpty && (
-        <Card title="Live workspace is empty">
-          <p className="text-sm text-[var(--text-secondary)]">
-            You are viewing your unit&apos;s Live data and no case files exist yet. Add records and
-            every module — Copilot answers, networks, risk scores, hotspots, forecasts — will
-            compute from your real data. Switch to Demo in the top bar to explore with synthetic
-            data.
-          </p>
+        <Card title={t('cases.empty.title')}>
+          <p className="text-sm text-[var(--text-secondary)]">{t('cases.empty.body')}</p>
           <Link href="/cases/new" className="btn-primary mt-4 inline-block px-5 py-2.5 text-xs">
-            + Register first case file
+            {t('cases.empty.cta')}
           </Link>
         </Card>
       )}
@@ -222,10 +217,10 @@ export default function OverviewPage() {
       <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-5">
         {KPI_DEFS.map(({ key, labelKey, suffix }) => (
           <div key={key} className="card p-5">
-            <div className="font-display text-4xl font-black tracking-tight text-[var(--text-primary)]">
+            <div className="font-display text-4xl font-black tracking-tight text-[var(--text-primary)] tabular-nums">
               <CountUp value={data.kpis[key]} suffix={suffix ?? ''} />
             </div>
-            <div className="mt-1.5 text-xs font-medium text-[var(--text-muted)]">{t(labelKey)}</div>
+            <div className="kicker mt-2">{t(labelKey)}</div>
           </div>
         ))}
       </div>
