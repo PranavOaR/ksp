@@ -6,12 +6,14 @@ import type { MoneyTrailData } from '@/lib/intel/financial';
 import { NetworkGraphView } from '@/components/NetworkGraph';
 import { Card, ErrorState, LoadingState, PageHeader } from '@/components/ui';
 import { RoleGate } from '@/components/RoleGate';
+import { useLanguage } from '@/lib/i18n';
 
 function formatInr(amount: number): string {
   return `₹${Math.round(amount).toLocaleString('en-IN')}`;
 }
 
 function FinancialPageInner() {
+  const { t } = useLanguage();
   const [data, setData] = useState<MoneyTrailData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedRing, setSelectedRing] = useState<number | null>(null);
@@ -35,13 +37,13 @@ function FinancialPageInner() {
   }, [data, selectedRing]);
 
   if (error) return <ErrorState message={error} />;
-  if (!data) return <LoadingState label="Tracing financial flows…" />;
+  if (!data) return <LoadingState label={t('financial.loading')} />;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Financial Crime Intelligence"
-        subtitle="Transaction link analysis, money trail visualization and circular-transfer detection (Module G)"
+        title={t('financial.title')}
+        subtitle={t('financial.subtitle')}
       />
 
       <div className="stagger grid grid-cols-3 gap-4">
@@ -49,26 +51,26 @@ function FinancialPageInner() {
           <div className="font-display text-3xl font-black text-[var(--text-primary)]">
             {data.stats.transferCount}
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">Transactions analysed</div>
+          <div className="mt-1 text-xs text-[var(--text-muted)]">{t('financial.kpi.transactions')}</div>
         </div>
         <div className="card p-5">
           <div className="font-display text-3xl font-black text-[var(--text-primary)]">
             {data.rings.length}
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">Circular transfer rings</div>
+          <div className="mt-1 text-xs text-[var(--text-muted)]">{t('financial.kpi.rings')}</div>
         </div>
         <div className="card p-5">
           <div className="font-display text-3xl font-black text-[var(--accent)]">
             {formatInr(data.stats.flaggedVolume)}
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">Volume in flagged rings</div>
+          <div className="mt-1 text-xs text-[var(--text-muted)]">{t('financial.kpi.flaggedVolume')}</div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <Card
-          title={`Suspicious rings (${data.rings.length})`}
-          subtitle="Funds returning to their origin through 3+ accounts — a layering indicator (G3)"
+          title={`${t('financial.rings.title')} (${data.rings.length})`}
+          subtitle={t('financial.rings.subtitle')}
         >
           <ul className="space-y-2.5">
             <li>
@@ -81,7 +83,7 @@ function FinancialPageInner() {
                     : 'border-[var(--border-1)] text-[var(--text-secondary)] hover:border-[var(--accent)]'
                 }`}
               >
-                Show full transaction network
+                {t('financial.rings.showAll')}
               </button>
             </li>
             {data.rings.map((ring, index) => (
@@ -97,21 +99,20 @@ function FinancialPageInner() {
                 >
                   <div className="mb-1 flex items-center justify-between text-xs">
                     <span className="font-semibold text-[var(--text-primary)]">
-                      Ring #{index + 1} · {ring.accounts.length} accounts
+                      Ring #{index + 1} · {ring.accounts.length} {t('financial.rings.accounts')}
                     </span>
                     <span className="font-display font-bold text-[var(--accent)]">
                       {formatInr(ring.totalAmount)}
                     </span>
                   </div>
                   <div className="text-[11px] leading-relaxed text-[var(--text-muted)]">
-                    {ring.accounts.map((account) => account.ownerName).join(' → ')} → back to
-                    origin
+                    {ring.accounts.map((account) => account.ownerName).join(' → ')} {t('financial.rings.backToOrigin')}
                   </div>
                 </button>
               </li>
             ))}
             {data.rings.length === 0 && (
-              <li className="text-sm text-[var(--text-muted)]">No circular flows detected.</li>
+              <li className="text-sm text-[var(--text-muted)]">{t('financial.rings.none')}</li>
             )}
           </ul>
         </Card>
@@ -119,33 +120,33 @@ function FinancialPageInner() {
         <Card
           title={
             selectedRing === null
-              ? 'Money trail — significant flows'
+              ? t('financial.trail.titleAll')
               : `Money trail — Ring #${selectedRing + 1}`
           }
-          subtitle="Accounts as nodes, transfers as links; hover to isolate (G2)"
+          subtitle={t('financial.trail.subtitle')}
         >
           {visibleGraph.nodes.length > 0 ? (
             <NetworkGraphView graph={visibleGraph} />
           ) : (
             <div className="flex h-64 items-center justify-center text-sm text-[var(--text-muted)]">
-              No significant flows to display.
+              {t('financial.trail.noFlows')}
             </div>
           )}
         </Card>
       </div>
 
       <Card
-        title="High-value transfers"
-        subtitle={`Individual transactions above ₹1,00,000 (G1) — top ${data.highValueTransfers.length}`}
+        title={t('financial.highValue.title')}
+        subtitle={`${t('financial.highValue.subtitle')} ${data.highValueTransfers.length}`}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--text-muted)]">
-                <th className="pb-2 pr-3 font-medium">From</th>
-                <th className="pb-2 pr-3 font-medium">To</th>
-                <th className="pb-2 pr-3 font-medium">Amount</th>
-                <th className="pb-2 font-medium">Date</th>
+                <th className="pb-2 pr-3 font-medium">{t('financial.highValue.from')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('financial.highValue.to')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('financial.highValue.amount')}</th>
+                <th className="pb-2 font-medium">{t('financial.highValue.date')}</th>
               </tr>
             </thead>
             <tbody>
