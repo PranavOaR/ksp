@@ -6,7 +6,7 @@ How to run this checklist, start to finish. Budget ~2.5 hours for one full pass.
 
 1. `git checkout main && git pull && npm run build && npm start` — test the **production** build, not dev mode.
 2. Chrome, normal window ≥ 1280 px wide. Open DevTools → Console and keep it visible.
-3. Log in as `admin` / `demo` → top bar → **Reset demo data** so the demo workspace is pristine.
+3. Log in as `admin` / `drishti123` → top bar → **Reset demo data** so the demo workspace is pristine.
 4. Confirm `.env.local` has `ANTHROPIC_API_KEY` set (we test both with and without — see Copilot section).
 
 ## How to report
@@ -32,7 +32,7 @@ Label:    qa-b5, plus `demo-blocker` if it breaks the 2-minute demo path
 
 Log in as each account and confirm the sidebar + direct-URL behaviour matches this table exactly. "Blocked" = the amber "Access restricted" card, and the attempt is audit-logged.
 
-| Page | inv (Investigator) | analyst | supervisor | admin |
+| Page | investigator | analyst | supervisor | admin |
 |---|---|---|---|---|
 | Overview `/overview` | ✅ | ✅ | ✅ | ✅ |
 | Copilot `/copilot` | ✅ | ✅ | ✅ | ✅ |
@@ -47,9 +47,9 @@ Log in as each account and confirm the sidebar + direct-URL behaviour matches th
 | CSV import `/cases/import` | 🚫 API rejects (403) | 🚫 | ✅ | ✅ |
 | Reset demo data | 🚫 | 🚫 | 🚫 | ✅ |
 
-Also test each 🚫 by **direct URL** (e.g. visit `/audit` as `inv`), not just sidebar absence.
+Also test each 🚫 by **direct URL** (e.g. visit `/audit` as `investigator`), not just sidebar absence.
 
-## Per-page checks (demo workspace, English, as `inv` unless stated)
+## Per-page checks (demo workspace, English, as `investigator` unless stated)
 
 ### Landing `/` + `/platform` `/security` `/modules`
 - [ ] Hero renders, Karnataka dot-field animates, no layout jumps.
@@ -105,7 +105,7 @@ Also test each 🚫 by **direct URL** (e.g. visit `/audit` as `inv`), not just s
 3. `/cases/new`: register a case dated **today**.
 4. Copilot: ask about it (*"cases in <district> this week"*) — the new case must appear.
 5. Overview: the new case counts as **recent** (A1 fix).
-6. As `supervisor`, `/cases/import`: import a small CSV → rows appear; as `inv`, confirm the API refuses (403).
+6. As `supervisor`, `/cases/import`: import a small CSV → rows appear; as `investigator`, confirm the API refuses (403).
 7. Switch back to Demo: seeded data intact, unchanged by anything you did in Live.
 
 ## Known issues — do not re-file
@@ -114,7 +114,7 @@ Also test each 🚫 by **direct URL** (e.g. visit `/audit` as `inv`), not just s
 
 ## Sign-off
 
-One full pass per role minimum: `inv` (full), `analyst` (Financial + spot checks), `supervisor` (Audit, status updates, import), `admin` (reset). Date and initial each pass at the bottom of this file in your PR.
+One full pass per role minimum: `investigator` (full), `analyst` (Financial + spot checks), `supervisor` (Audit, status updates, import), `admin` (reset). Date and initial each pass at the bottom of this file in your PR.
 
 | Date | Role(s) | Pass/Issues filed | Initials |
 |---|---|---|---|
