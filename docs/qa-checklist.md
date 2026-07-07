@@ -43,7 +43,7 @@ Log in as each account and confirm the sidebar + direct-URL behaviour matches th
 | Cases `/cases`, `/cases/[id]` | ✅ | ✅ | ✅ | ✅ |
 | Sociology `/sociology` | ✅ | ✅ | ✅ | ✅ |
 | Audit `/audit` | 🚫 | 🚫 | ✅ | ✅ |
-| Case **status update** control | hidden | hidden | ✅ | ✅ |
+| Case **status update** | 🚫 API rejects (403) | 🚫 | ✅ | ✅ |
 | CSV import `/cases/import` | 🚫 API rejects (403) | 🚫 | ✅ | ✅ |
 | Reset demo data | 🚫 | 🚫 | 🚫 | ✅ |
 
@@ -110,7 +110,7 @@ Also test each 🚫 by **direct URL** (e.g. visit `/audit` as `inv`), not just s
 
 ## Known issues — do not re-file
 
-- Case-status PATCH API is not role-gated server-side (UI hides it below Supervisor); fix scheduled in Track C5.
+- The case-status dropdown is still *visible* to Investigator/Analyst (the API rejects the change with a clear 403 error). Hiding the control for those roles is scheduled in Track C4 to avoid conflicting with the B1 translation work in that page file.
 
 ## Sign-off
 
