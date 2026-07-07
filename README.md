@@ -2,18 +2,45 @@
 
 > ದೃಷ್ಟಿ (*Drishti*, "vision") — **D**ata-driven **R**apid **I**nvestigation & **S**trategic **H**olistic **T**hreat **I**ntelligence
 
-An AI-powered investigative intelligence platform for Karnataka State Police: natural-language access to crime records, criminal network discovery, offender risk profiling, hotspot detection, and crime forecasting — with explainable, evidence-backed, fully audited answers.
+An AI-powered investigative intelligence platform for Karnataka State Police: natural-language access to crime records, criminal network discovery, offender risk profiling, hotspot detection, crime forecasting, and sociological intelligence — with explainable, evidence-backed, fully audited answers.
 
 **All data in this repository is synthetic**, generated deterministically for demonstration. No real crime records, people, or identifiers are used.
 
-## Quick start
+## Quick start (3 steps)
 
 ```bash
-npm install
-npm run dev        # http://localhost:3000
+git clone https://github.com/PranavOaR/ksp.git
+cd ksp && npm install
+npm run dev        # → http://localhost:3000
 ```
 
-The SQLite database (`data/drishti.db`) is created and seeded automatically on first request — 480 FIRs, 220 persons, 5 planted crime rings, assets, and transactions across 10 Karnataka districts (2024-01 → 2026-06).
+The SQLite database (`data/drishti.db`) is created and seeded automatically on first request — **480 FIRs, 220 persons, 5 planted crime rings**, assets, and transactions across 10 Karnataka districts (2024-01 → 2026-06).
+
+## Demo accounts
+
+| Role | Username | Password | Access |
+|---|---|---|---|
+| **Investigator** | `inv` | `demo` | Copilot, Cases, Network, Offenders, Analytics, Sociology |
+| **Analyst** | `analyst` | `demo` | + Financial Intel |
+| **Supervisor** | `supervisor` | `demo` | + Audit trail, case status updates |
+| **Administrator** | `admin` | `demo` | Full access |
+
+> **To enable Claude-powered Copilot:** put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot uses the offline rule engine — every response is badged with the engine that produced it.
+
+## Module map
+
+| Module | What it does | Where |
+|---|---|---|
+| **A — Natural language** | Translate questions to query filters; Claude + offline rule engine fallback | `src/lib/intel/llm.ts`, `queryParser.ts` |
+| **B — Network intel** | 2–3-hop BFS across persons, FIRs, phones, vehicles; crime ring detection | `src/lib/intel/network.ts`, `gangs.ts` |
+| **C — Analytics** | Temporal, geographic, hotspot, and MO serial-pattern intelligence | `src/lib/intel/hotspots.ts`, `moClusters.ts` |
+| **D — Sociology** | Crime rates correlated with 2011 Census literacy & urbanisation; social-risk score per district | `src/lib/intel/sociology.ts`, `src/lib/data/census.ts` |
+| **E — Offenders** | Repeat-offender register; explainable risk score (priors + network + recency + versatility) | `src/lib/intel/riskScoring.ts` |
+| **F — Case intel** | Auto case summary, timeline, similar-case retrieval, investigative leads | `src/lib/intel/caseIntel.ts` |
+| **G — Financial** | Seeded transaction rings; high-value leads on case pages | `seed.ts`, `caseIntel.ts` |
+| **H — Forecasting** | Least-squares 3-month forecast; emerging-hotspot early-warning alerts | `src/lib/intel/forecast.ts` |
+| **I — Explainable AI** | Evidence FIR refs, reasoning trail, confidence score on every Copilot response | `/copilot` response cards |
+| **J — Governance** | RBAC-lite role switcher; every query, view and export audit-logged | `src/lib/audit.ts`, `authShared.ts` |
 
 ```bash
 npm test                    # vitest unit + integration suites

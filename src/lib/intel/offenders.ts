@@ -23,10 +23,13 @@ function daysBetween(fromIso: string, toIso: string): number {
 
 /**
  * Repeat offender detection + behavioural profile + risk scoring
- * (PRD E1, E2, E3). "Now" is pinned to the dataset end so the synthetic
- * demo scores are stable.
+ * (PRD E1, E2, E3). "Now" defaults to DATASET_END for stable demo scores;
+ * pass the live workspace's MAX(occurred_at) date string to make recency
+ * relative to real data (A1 fix).
  */
-export function getOffenderProfiles(db: Database, minCases = 2): OffenderProfile[] {
+export function getOffenderProfiles(db: Database, minCases = 2, now?: string): OffenderProfile[] {
+  const referenceNow = now ? `${now.slice(0, 10)}T00:00:00` : `${DATASET_END}T00:00:00`;
+
   const rows = db
     .prepare(
       `SELECT p.id, p.name, p.age, p.gender, p.occupation, p.district,
@@ -55,7 +58,7 @@ export function getOffenderProfiles(db: Database, minCases = 2): OffenderProfile
     const risk = computeRiskScore({
       priorOffenses: row.caseCount,
       networkDegree: degree,
-      daysSinceLastCase: daysBetween(row.lastActive, `${DATASET_END}T00:00:00`),
+      daysSinceLastCase: daysBetween(row.lastActive, referenceNow),
       crimeTypeCount: crimeTypes.length,
     });
     return {

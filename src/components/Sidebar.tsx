@@ -15,6 +15,7 @@ const NAV_ITEMS: Array<{ href: string; labelKey: MessageKey; icon: string }> = [
   { href: '/analytics', labelKey: 'nav.analytics', icon: '▤' },
   { href: '/offenders', labelKey: 'nav.offenders', icon: '▲' },
   { href: '/cases', labelKey: 'nav.cases', icon: '≡' },
+  { href: '/sociology', labelKey: 'nav.sociology', icon: '◈' },
   { href: '/audit', labelKey: 'nav.audit', icon: '✓' },
 ];
 

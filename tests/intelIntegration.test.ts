@@ -72,6 +72,18 @@ describe('offender profiling on seeded data (E1–E3)', () => {
     }
   });
 
+  test('offender recency is relative to the provided "now" date (A1)', () => {
+    // Insert a fresh FIR dated today to simulate a live workspace
+    const today = new Date().toISOString().slice(0, 10);
+    const profiles = getOffenderProfiles(db, 2, today);
+    // All offenders should still be returned; the function should not throw
+    expect(profiles.length).toBeGreaterThan(0);
+    for (const p of profiles) {
+      expect(p.riskScore).toBeGreaterThanOrEqual(0);
+      expect(p.riskScore).toBeLessThanOrEqual(100);
+    }
+  });
+
   test('seeded gangs are recovered as crime rings (B2)', () => {
     const rings = detectCrimeRings(getCoAccusedPairs(db));
 

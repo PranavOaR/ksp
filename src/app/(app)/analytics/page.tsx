@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/clientApi';
 import type { ForecastPoint } from '@/lib/intel/forecast';
 import type { Hotspot } from '@/lib/intel/hotspots';
+import type { MOCluster } from '@/lib/intel/moClusters';
 import { BreakdownBar, DistributionBar } from '@/components/charts/BreakdownBar';
 import { TrendChart } from '@/components/charts/TrendChart';
 import { Card, ErrorState, LoadingState, PageHeader } from '@/components/ui';
@@ -15,6 +16,7 @@ interface AnalyticsData {
   byHour: Array<{ hour: number; count: number }>;
   hotspots: Hotspot[];
   statusBreakdown: Array<{ name: string; count: number }>;
+  moClusters: MOCluster[];
 }
 
 function HotspotList({ hotspots }: { hotspots: Hotspot[] }) {
@@ -46,6 +48,27 @@ function HotspotList({ hotspots }: { hotspots: Hotspot[] }) {
               }}
             />
           </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MOPatternsList({ clusters }: { clusters: MOCluster[] }) {
+  if (clusters.length === 0) {
+    return <p className="text-sm text-[var(--text-muted)]">No serial MO patterns detected.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {clusters.slice(0, 8).map((cluster) => (
+        <li
+          key={cluster.mo}
+          className="flex items-center justify-between rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/50 px-3 py-2"
+        >
+          <span className="text-sm text-[var(--text-primary)]">{cluster.mo}</span>
+          <span className="ml-3 shrink-0 rounded-full bg-[var(--series-3)]/15 px-2.5 py-0.5 text-[11px] font-bold text-[var(--series-3)]">
+            {cluster.count} cases
+          </span>
         </li>
       ))}
     </ul>
@@ -96,6 +119,13 @@ export default function AnalyticsPage() {
           <HotspotList hotspots={data.hotspots} />
         </Card>
       </div>
+
+      <Card
+        title="Modus operandi serial patterns (C4)"
+        subtitle="FIR groups sharing an identical modus operandi — potential serial offenders"
+      >
+        <MOPatternsList clusters={data.moClusters} />
+      </Card>
     </div>
   );
 }

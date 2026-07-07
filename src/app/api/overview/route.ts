@@ -6,8 +6,20 @@ import { detectCrimeRings } from '@/lib/intel/gangs';
 import { detectHotspots, type RegionCount } from '@/lib/intel/hotspots';
 import { getCoAccusedPairs, getOffenderProfiles } from '@/lib/intel/offenders';
 
-const RECENT_WINDOW_START = '2026-04-01';
-const PREVIOUS_WINDOW_START = '2026-01-01';
+/**
+ * Derives "recent" and "previous" quarter start dates relative to the latest
+ * record in the active workspace, so hotspot windows are always live-data-relative
+ * instead of pinned to the synthetic demo calendar (A1 fix).
+ */
+function deriveQuarterWindows(maxDate: string): { recentStart: string; previousStart: string } {
+  const d = new Date(maxDate);
+  const recent = new Date(d);
+  recent.setMonth(recent.getMonth() - 3);
+  const previous = new Date(d);
+  previous.setMonth(previous.getMonth() - 6);
+  const fmt = (date: Date) => date.toISOString().slice(0, 10);
+  return { recentStart: fmt(recent), previousStart: fmt(previous) };
+}
 
 export async function GET(request: Request) {
   return withErrorHandling(() => {
@@ -22,7 +34,15 @@ export async function GET(request: Request) {
       )
       .get() as { totalFirs: number; solved: number };
 
-    const offenders = getOffenderProfiles(db);
+    // A1: derive quarter windows and offender "now" from actual data
+    const { maxDate } = db
+      .prepare(`SELECT COALESCE(MAX(occurred_at), datetime('now')) AS maxDate FROM firs`)
+      .get() as { maxDate: string };
+    const { recentStart, previousStart } = deriveQuarterWindows(maxDate);
+    const datasetNow = maxDate.slice(0, 10);
+
+    // Pass the live dataset's end date as "now" so recency scores are meaningful
+    const offenders = getOffenderProfiles(db, 2, datasetNow);
     const rings = detectCrimeRings(getCoAccusedPairs(db));
 
     const regionCounts = db
@@ -33,7 +53,7 @@ export async function GET(request: Request) {
                 SUM(CASE WHEN occurred_at >= ? AND occurred_at < ? THEN 1 ELSE 0 END) AS previous
          FROM firs GROUP BY district`
       )
-      .all(RECENT_WINDOW_START, PREVIOUS_WINDOW_START, RECENT_WINDOW_START) as RegionCount[];
+      .all(recentStart, previousStart, recentStart) as RegionCount[];
     const emerging = detectHotspots(regionCounts).filter((hotspot) => hotspot.isEmerging);
 
     const recentFirs = db

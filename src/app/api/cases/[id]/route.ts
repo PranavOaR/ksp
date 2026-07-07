@@ -5,6 +5,7 @@ import { getDb } from '@/lib/db/client';
 import { workspaceFromRequest } from '@/lib/workspace';
 import { buildCaseIntelligence } from '@/lib/intel/caseIntel';
 import { updateCaseStatus } from '@/lib/intel/createCase';
+import { clusterByMO, findMOCluster } from '@/lib/intel/moClusters';
 
 /** Update case status: Open → Under Investigation → Solved (PRD F1). */
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -52,6 +53,17 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       throw new Error(`Case ${firId} not found`);
     }
     logAudit(db, roleFromRequest(request), 'view_case', intelligence.fir.fir_number);
-    return intelligence;
+
+    // A3: check whether this case is part of a serial MO cluster (C4)
+    const allMoRows = db
+      .prepare(`SELECT id, modus_operandi FROM firs`)
+      .all() as Array<{ id: number; modus_operandi: string }>;
+    const clusters = clusterByMO(allMoRows);
+    const moCluster = findMOCluster(firId, clusters);
+    const moSerialPattern = moCluster
+      ? { isSerial: true, clusterSize: moCluster.count, mo: moCluster.mo }
+      : { isSerial: false, clusterSize: 1, mo: intelligence.fir.modus_operandi };
+
+    return { ...intelligence, moSerialPattern };
   });
 }

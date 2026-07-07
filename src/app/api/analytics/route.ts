@@ -4,15 +4,37 @@ import { getDb } from '@/lib/db/client';
 import { workspaceFromRequest } from '@/lib/workspace';
 import { forecastMonthly, type MonthlyPoint } from '@/lib/intel/forecast';
 import { detectHotspots, type RegionCount } from '@/lib/intel/hotspots';
+import { clusterByMO } from '@/lib/intel/moClusters';
 
 const FORECAST_HORIZON_MONTHS = 3;
-const RECENT_WINDOW_START = '2026-04-01';
-const PREVIOUS_WINDOW_START = '2026-01-01';
+
+/**
+ * Derives "recent" and "previous" quarter start dates relative to the latest
+ * record in the active workspace, so hotspot windows are always live-data-relative
+ * instead of pinned to the synthetic demo calendar (A1 fix).
+ */
+function deriveQuarterWindows(maxDate: string): { recentStart: string; previousStart: string } {
+  const d = new Date(maxDate);
+  // recent = 3 months before maxDate
+  const recent = new Date(d);
+  recent.setMonth(recent.getMonth() - 3);
+  // previous = 6 months before maxDate
+  const previous = new Date(d);
+  previous.setMonth(previous.getMonth() - 6);
+  const fmt = (date: Date) => date.toISOString().slice(0, 10);
+  return { recentStart: fmt(recent), previousStart: fmt(previous) };
+}
 
 export async function GET(request: Request) {
   return withErrorHandling(() => {
     const db = getDb(workspaceFromRequest(request));
     logAudit(db, roleFromRequest(request), 'view_analytics', 'analytics dashboard');
+
+    // A1: derive quarter windows from actual data, not hard-coded dates
+    const { maxDate } = db
+      .prepare(`SELECT COALESCE(MAX(occurred_at), datetime('now')) AS maxDate FROM firs`)
+      .get() as { maxDate: string };
+    const { recentStart, previousStart } = deriveQuarterWindows(maxDate);
 
     const monthly = db
       .prepare(
@@ -44,11 +66,19 @@ export async function GET(request: Request) {
                 SUM(CASE WHEN occurred_at >= ? AND occurred_at < ? THEN 1 ELSE 0 END) AS previous
          FROM firs GROUP BY district`
       )
-      .all(RECENT_WINDOW_START, PREVIOUS_WINDOW_START, RECENT_WINDOW_START) as RegionCount[];
+      .all(recentStart, previousStart, recentStart) as RegionCount[];
 
     const statusBreakdown = db
       .prepare('SELECT status AS name, COUNT(*) AS count FROM firs GROUP BY status')
       .all() as Array<{ name: string; count: number }>;
+
+    // A3: MO clusters — groups of 2+ FIRs sharing identical modus operandi
+    const moRows = db
+      .prepare(
+        `SELECT id, modus_operandi FROM firs ORDER BY occurred_at DESC`
+      )
+      .all() as Array<{ id: number; modus_operandi: string }>;
+    const moClusters = clusterByMO(moRows);
 
     return {
       monthlyWithForecast: forecastMonthly(monthly, FORECAST_HORIZON_MONTHS),
@@ -57,6 +87,7 @@ export async function GET(request: Request) {
       byHour,
       hotspots: detectHotspots(regionCounts),
       statusBreakdown,
+      moClusters,
     };
   });
 }
