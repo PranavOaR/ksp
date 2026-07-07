@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { RiskBadge, StatusBadge } from '@/components/ui';
+import { useLanguage } from '@/lib/i18n';
 import type { ChatResponse } from './types';
 
 function ConfidenceMeter({ value }: { value: number }) {
+  const { t } = useLanguage();
   const percent = Math.round(value * 100);
   return (
     <div className="flex items-center gap-2" title={`Confidence ${percent}%`}>
@@ -15,13 +17,14 @@ function ConfidenceMeter({ value }: { value: number }) {
           style={{ width: `${percent}%` }}
         />
       </div>
-      <span className="text-[11px] text-[var(--text-muted)]">{percent}% confidence</span>
+      <span className="text-[11px] text-[var(--text-muted)]">{percent}{t('copilot.confidence')}</span>
     </div>
   );
 }
 
 /** Renders one copilot answer with evidence + reasoning trail (Module I). */
 export function ResponseCard({ response }: { response: ChatResponse }) {
+  const { t } = useLanguage();
   const [showReasoning, setShowReasoning] = useState(false);
 
   return (
@@ -50,11 +53,11 @@ export function ResponseCard({ response }: { response: ChatResponse }) {
           <table className="w-full text-left text-xs">
             <thead className="bg-[var(--surface-2)] text-[var(--text-muted)]">
               <tr>
-                <th className="px-3 py-2 font-medium">FIR</th>
-                <th className="px-3 py-2 font-medium">Type</th>
-                <th className="px-3 py-2 font-medium">District</th>
-                <th className="px-3 py-2 font-medium">Occurred</th>
-                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">{t('copilot.response.fir')}</th>
+                <th className="px-3 py-2 font-medium">{t('copilot.response.type')}</th>
+                <th className="px-3 py-2 font-medium">{t('copilot.response.district')}</th>
+                <th className="px-3 py-2 font-medium">{t('copilot.response.occurred')}</th>
+                <th className="px-3 py-2 font-medium">{t('copilot.response.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -79,7 +82,7 @@ export function ResponseCard({ response }: { response: ChatResponse }) {
           </table>
           {response.totalCount > 8 && (
             <p className="px-3 py-2 text-[11px] text-[var(--text-muted)]">
-              Showing 8 of {response.totalCount} matching FIRs.
+              {t('copilot.response.showingOf')} {response.totalCount} {t('copilot.response.matchingFirs')}
             </p>
           )}
         </div>
@@ -99,7 +102,7 @@ export function ResponseCard({ response }: { response: ChatResponse }) {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[var(--text-muted)]">Risk {offender.riskScore}</span>
+                <span className="text-[var(--text-muted)]">{t('copilot.response.risk')} {offender.riskScore}</span>
                 <RiskBadge category={offender.riskCategory} />
               </div>
             </li>
@@ -109,7 +112,7 @@ export function ResponseCard({ response }: { response: ChatResponse }) {
 
       {response.evidence.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] text-[var(--text-muted)]">Evidence:</span>
+          <span className="text-[11px] text-[var(--text-muted)]">{t('copilot.response.evidence')}</span>
           {response.evidence.slice(0, 6).map((reference) => (
             <span
               key={reference}
@@ -126,15 +129,15 @@ export function ResponseCard({ response }: { response: ChatResponse }) {
         onClick={() => setShowReasoning((previous) => !previous)}
         className="text-[11px] text-[var(--series-1)] hover:underline"
       >
-        {showReasoning ? 'Hide' : 'Show'} reasoning trail
+        {showReasoning ? t('copilot.response.hideReasoning') : t('copilot.response.showReasoning')}
       </button>
       {showReasoning && (
         <ol className="list-decimal space-y-1 pl-5 text-[11px] text-[var(--text-secondary)]">
-          {response.isRefinement && <li>Interpreted as a refinement of the previous question</li>}
+          {response.isRefinement && <li>{t('copilot.response.refinement')}</li>}
           {response.reasoningTrail.map((step) => (
             <li key={step}>{step}</li>
           ))}
-          <li>Executed structured query against the FIR database</li>
+          <li>{t('copilot.response.executedQuery')}</li>
         </ol>
       )}
     </div>

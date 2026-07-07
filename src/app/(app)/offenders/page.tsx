@@ -5,13 +5,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/clientApi';
 import type { OffenderProfile } from '@/lib/intel/types';
 import { Card, ErrorState, LoadingState, PageHeader, RiskBadge } from '@/components/ui';
+import { useLanguage } from '@/lib/i18n';
 
-const CATEGORY_FILTERS = ['All', 'High', 'Medium', 'Low'] as const;
+type CategoryFilter = 'All' | 'High' | 'Medium' | 'Low';
+const CATEGORY_FILTERS: CategoryFilter[] = ['All', 'High', 'Medium', 'Low'];
 
 export default function OffendersPage() {
+  const { t } = useLanguage();
   const [offenders, setOffenders] = useState<OffenderProfile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<(typeof CATEGORY_FILTERS)[number]>('All');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('All');
 
   useEffect(() => {
     apiFetch<{ offenders: OffenderProfile[] }>('/api/offenders')
@@ -28,13 +31,20 @@ export default function OffendersPage() {
   );
 
   if (error) return <ErrorState message={error} />;
-  if (!offenders) return <LoadingState label="Scoring offender risk…" />;
+  if (!offenders) return <LoadingState label={t('offenders.loading')} />;
+
+  const filterLabelKey: Record<CategoryFilter, Parameters<typeof t>[0]> = {
+    All: 'offenders.filter.all',
+    High: 'offenders.filter.high',
+    Medium: 'offenders.filter.medium',
+    Low: 'offenders.filter.low',
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Offender Risk Register"
-        subtitle="Repeat offenders ranked by explainable risk score: prior offenses, network influence, recency, versatility (Module E)"
+        title={t('offenders.title')}
+        subtitle={t('offenders.subtitle')}
       />
 
       <div className="flex gap-2">
@@ -49,26 +59,26 @@ export default function OffendersPage() {
                 : 'border border-[var(--border-1)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
-            {category}
+            {t(filterLabelKey[category])}
             {category !== 'All' &&
               ` (${offenders.filter((offender) => offender.riskCategory === category).length})`}
           </button>
         ))}
       </div>
 
-      <Card title={`${visible.length} offenders`}>
+      <Card title={`${visible.length} ${t('offenders.offenders')}`}>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--text-muted)]">
-                <th className="pb-2 pr-3 font-medium">Name</th>
-                <th className="pb-2 pr-3 font-medium">Profile</th>
-                <th className="pb-2 pr-3 font-medium">Cases</th>
-                <th className="pb-2 pr-3 font-medium">Crime types</th>
-                <th className="pb-2 pr-3 font-medium">Associates</th>
-                <th className="pb-2 pr-3 font-medium">Last active</th>
-                <th className="pb-2 pr-3 font-medium">Risk score</th>
-                <th className="pb-2 font-medium">Category</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.name')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.profile')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.cases')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.crimeTypes')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.associates')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.lastActive')}</th>
+                <th className="pb-2 pr-3 font-medium">{t('offenders.table.riskScore')}</th>
+                <th className="pb-2 font-medium">{t('offenders.table.category')}</th>
               </tr>
             </thead>
             <tbody>
@@ -120,9 +130,9 @@ export default function OffendersPage() {
           </table>
         </div>
         <p className="mt-4 text-xs text-[var(--text-muted)]">
-          Explore an offender&apos;s connections in{' '}
+          {t('offenders.networkNote')}{' '}
           <Link href="/network" className="text-[var(--series-1)] hover:underline">
-            Network Intel
+            {t('offenders.networkLink')}
           </Link>
           .
         </p>

@@ -8,6 +8,7 @@ import type { MOCluster } from '@/lib/intel/moClusters';
 import { BreakdownBar, DistributionBar } from '@/components/charts/BreakdownBar';
 import { TrendChart } from '@/components/charts/TrendChart';
 import { Card, ErrorState, LoadingState, PageHeader } from '@/components/ui';
+import { useLanguage } from '@/lib/i18n';
 
 interface AnalyticsData {
   monthlyWithForecast: ForecastPoint[];
@@ -20,6 +21,7 @@ interface AnalyticsData {
 }
 
 function HotspotList({ hotspots }: { hotspots: Hotspot[] }) {
+  const { t } = useLanguage();
   return (
     <ul className="space-y-2.5">
       {hotspots.map((hotspot) => (
@@ -29,11 +31,11 @@ function HotspotList({ hotspots }: { hotspots: Hotspot[] }) {
               {hotspot.region}
               {hotspot.isEmerging && (
                 <span className="ml-2 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                  ⚠ emerging +{hotspot.growthPercent}%
+                  {t('analytics.hotspots.emerging')} +{hotspot.growthPercent}%
                 </span>
               )}
             </span>
-            <span className="text-[var(--text-muted)]">{hotspot.total} FIRs</span>
+            <span className="text-[var(--text-muted)]">{hotspot.total} {t('analytics.hotspots.firs')}</span>
           </div>
           <div
             className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]"
@@ -76,6 +78,7 @@ function MOPatternsList({ clusters }: { clusters: MOCluster[] }) {
 }
 
 export default function AnalyticsPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,38 +87,38 @@ export default function AnalyticsPage() {
   }, []);
 
   if (error) return <ErrorState message={error} />;
-  if (!data) return <LoadingState label="Computing analytics…" />;
+  if (!data) return <LoadingState label={t('analytics.loading')} />;
 
   const hourData = data.byHour.map((row) => ({ ...row, hour: `${row.hour}:00` }));
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Crime Pattern & Trend Analytics"
-        subtitle="Temporal, geographic and hotspot intelligence with a 3-month forecast (Modules C & H)"
+        title={t('analytics.title')}
+        subtitle={t('analytics.subtitle')}
       />
 
       <Card
-        title="Monthly registered FIRs — history and forecast"
-        subtitle="Dashed segment is a least-squares projection (H1)"
+        title={t('analytics.monthly.title')}
+        subtitle={t('analytics.monthly.subtitle')}
       >
         <TrendChart points={data.monthlyWithForecast} />
       </Card>
 
       <div className="stagger grid gap-6 lg:grid-cols-2">
-        <Card title="By crime type" subtitle="Distribution across offence categories (C4 input)">
+        <Card title={t('analytics.byCrimeType.title')} subtitle={t('analytics.byCrimeType.subtitle')}>
           <BreakdownBar data={data.byCrimeType} />
         </Card>
-        <Card title="By district" subtitle="Geographic distribution (C2)">
+        <Card title={t('analytics.byDistrict.title')} subtitle={t('analytics.byDistrict.subtitle')}>
           <BreakdownBar data={data.byDistrict} color="#199e70" />
         </Card>
       </div>
 
       <div className="stagger grid gap-6 lg:grid-cols-2">
-        <Card title="Hour-of-day pattern" subtitle="When crimes occur (C1) — note the night-hour concentration">
+        <Card title={t('analytics.byHour.title')} subtitle={t('analytics.byHour.subtitle')}>
           <DistributionBar data={hourData} xKey="hour" />
         </Card>
-        <Card title="Hotspot intensity" subtitle="Relative incident volume by district; amber = emerging cluster (C3, H3)">
+        <Card title={t('analytics.hotspots.title')} subtitle={t('analytics.hotspots.subtitle')}>
           <HotspotList hotspots={data.hotspots} />
         </Card>
       </div>

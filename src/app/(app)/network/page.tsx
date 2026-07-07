@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/clientApi';
 import type { NetworkGraph } from '@/lib/intel/types';
 import { NetworkGraphView } from '@/components/NetworkGraph';
 import { Card, ErrorState, LoadingState, PageHeader } from '@/components/ui';
+import { useLanguage } from '@/lib/i18n';
 
 interface RingSummary {
   members: number[];
@@ -18,6 +19,7 @@ interface NetworkResponse {
 }
 
 export default function NetworkPage() {
+  const { t } = useLanguage();
   const [rings, setRings] = useState<RingSummary[] | null>(null);
   const [graph, setGraph] = useState<NetworkGraph | null>(null);
   const [selected, setSelected] = useState<{ personId: number; name: string } | null>(null);
@@ -41,19 +43,19 @@ export default function NetworkPage() {
   }, [selected, hops]);
 
   if (error) return <ErrorState message={error} />;
-  if (!rings) return <LoadingState label="Detecting criminal networks…" />;
+  if (!rings) return <LoadingState label={t('network.loading')} />;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Criminal Network Intelligence"
-        subtitle="Organized crime rings detected from repeat co-offending, with entity-relationship exploration (Module B)"
+        title={t('network.title')}
+        subtitle={t('network.subtitle')}
       />
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <Card
-          title={`Detected crime rings (${rings.length})`}
-          subtitle="People repeatedly co-accused across FIRs"
+          title={`${t('network.rings.title')} (${rings.length})`}
+          subtitle={t('network.rings.subtitle')}
         >
           <ul className="space-y-3">
             {rings.map((ring, index) => (
@@ -61,7 +63,7 @@ export default function NetworkPage() {
                 <div className="mb-2 flex items-center justify-between text-xs">
                   <span className="font-semibold text-[var(--text-primary)]">Ring #{index + 1}</span>
                   <span className="text-[var(--text-muted)]">
-                    {ring.members.length} members · {ring.collaborationCount} joint cases
+                    {ring.members.length} {t('network.rings.members')} · {ring.collaborationCount} {t('network.rings.jointCases')}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -88,16 +90,20 @@ export default function NetworkPage() {
         </Card>
 
         <Card
-          title={selected ? `Entities connected to ${selected.name}` : 'Entity relationship explorer'}
+          title={
+            selected
+              ? `${t('network.explorer.connectedTo')} ${selected.name}`
+              : t('network.explorer.title')
+          }
           subtitle={
             selected
-              ? `Breadth-first expansion, ${hops} hop${hops > 1 ? 's' : ''} — persons, FIRs, phones, vehicles, accounts`
-              : 'Select a person from a crime ring to expand their network'
+              ? `${t('network.explorer.hopExpansion')} ${hops} ${hops > 1 ? t('network.explorer.hops') : t('network.explorer.hop')} ${t('network.explorer.entitiesNote')}`
+              : t('network.explorer.subtitle')
           }
         >
           {selected && (
             <div className="mb-3 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-              <span>Hops:</span>
+              <span>{t('network.explorer.hops')}</span>
               {[1, 2, 3].map((option) => (
                 <button
                   key={option}
@@ -115,12 +121,12 @@ export default function NetworkPage() {
             </div>
           )}
           {isLoadingGraph ? (
-            <LoadingState label="Expanding network…" />
+            <LoadingState label={t('network.explorer.loadingGraph')} />
           ) : graph && graph.nodes.length > 0 ? (
             <NetworkGraphView graph={graph} />
           ) : (
             <div className="flex h-64 items-center justify-center text-sm text-[var(--text-muted)]">
-              {selected ? 'No connections found.' : '⬡ Pick a suspect to visualize their network'}
+              {selected ? t('network.explorer.noConnections') : t('network.explorer.pickSuspect')}
             </div>
           )}
         </Card>

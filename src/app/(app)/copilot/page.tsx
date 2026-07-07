@@ -10,6 +10,7 @@ import { conversationToCsv, downloadCsv } from '@/components/copilot/exportCsv';
 import { exportConversationPdf } from '@/components/copilot/exportPdf';
 import { useVoice, type VoiceLanguage } from '@/components/copilot/useVoice';
 import type { ChatResponse, ChatTurn } from '@/components/copilot/types';
+import { useLanguage } from '@/lib/i18n';
 
 const SUGGESTIONS = [
   'Show all burglary FIRs in Bengaluru during March 2026',
@@ -21,6 +22,7 @@ const SUGGESTIONS = [
 ];
 
 function CopilotChat() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [input, setInput] = useState('');
@@ -125,8 +127,8 @@ function CopilotChat() {
     <div className="mx-auto flex h-[calc(100vh-8.5rem)] max-w-4xl flex-col">
       <div className="flex items-start justify-between gap-4">
         <PageHeader
-          title="Intelligence Copilot"
-          subtitle="Ask in English or ಕನ್ನಡ — typed or spoken. Follow-ups refine the previous question."
+          title={t('copilot.title')}
+          subtitle={t('copilot.subtitle')}
         />
         <div className="flex shrink-0 gap-2">
           <button
@@ -135,7 +137,7 @@ function CopilotChat() {
             disabled={!hasExportableTurns}
             className="btn-ghost px-4 py-2 text-xs disabled:opacity-40"
           >
-            ⬇ CSV
+            {t('copilot.exportCsv')}
           </button>
           <button
             type="button"
@@ -143,7 +145,7 @@ function CopilotChat() {
             disabled={!hasExportableTurns}
             className="btn-ghost px-4 py-2 text-xs disabled:opacity-40"
           >
-            ⬇ PDF
+            {t('copilot.exportPdf')}
           </button>
         </div>
       </div>
@@ -151,7 +153,7 @@ function CopilotChat() {
       <div className="card flex-1 space-y-5 overflow-y-auto p-5">
         {turns.length === 0 && (
           <div className="py-10 text-center text-sm text-[var(--text-muted)]">
-            <p className="mb-4">Start with one of these, or tap the mic:</p>
+            <p className="mb-4">{t('copilot.emptyPrompt')}</p>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((suggestion) => (
                 <button
@@ -160,7 +162,7 @@ function CopilotChat() {
                   onClick={() => void ask(suggestion)}
                   className="rounded-full border border-[var(--border-1)] bg-[var(--surface-2)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--series-1)] hover:text-[var(--text-primary)]"
                 >
-                  “{suggestion}”
+                  &ldquo;{suggestion}&rdquo;
                 </button>
               ))}
             </div>
@@ -180,7 +182,7 @@ function CopilotChat() {
               ) : turn.response ? (
                 <ResponseCard response={turn.response} />
               ) : (
-                <p className="animate-pulse text-sm text-[var(--text-muted)]">Analysing…</p>
+                <p className="animate-pulse text-sm text-[var(--text-muted)]">{t('copilot.analysing')}</p>
               )}
             </div>
           </div>
@@ -210,9 +212,9 @@ function CopilotChat() {
             }
             title={
               !voice.isSupported
-                ? 'Voice input needs Chrome or Edge'
+                ? t('copilot.voiceNeedsChrome')
                 : voice.isListening
-                  ? 'Stop listening'
+                  ? t('copilot.stopListening')
                   : `Ask by voice (${isKannada ? 'Kannada' : 'English'})`
             }
             className={`rounded-xl border px-3 text-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -229,9 +231,9 @@ function CopilotChat() {
             placeholder={
               voice.isListening
                 ? isKannada
-                  ? 'ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದೆ…'
-                  : 'Listening…'
-                : 'e.g. "Show theft cases in Mysuru" … then "Only solved cases"'
+                  ? t('copilot.listening')
+                  : t('copilot.listening')
+                : t('copilot.inputPlaceholder')
             }
             className="flex-1 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--series-1)]"
             disabled={isBusy}
@@ -242,7 +244,7 @@ function CopilotChat() {
             disabled={isBusy || !input.trim()}
             className="rounded-xl btn-primary px-6 py-3 text-sm disabled:opacity-40"
           >
-            Ask
+            {t('copilot.askButton')}
           </button>
         </div>
         <div className="space-y-1">
@@ -256,16 +258,14 @@ function CopilotChat() {
               }}
               className="accent-[var(--accent)]"
             />
-            🔊 Read answers aloud
+            {t('copilot.readAloud')}
           </label>
           {voice.recognitionError && (
             <p className="text-xs text-red-600">{voice.recognitionError}</p>
           )}
           {shouldSpeakAnswers && isKannada && !voice.hasKannadaVoice && (
             <p className="text-xs text-amber-400">
-              No Kannada text-to-speech voice is installed in this browser, so Kannada answers
-              can&apos;t be read aloud. On macOS: System Settings → Accessibility → Spoken Content →
-              System Voice → Manage Voices → add Kannada. English read-aloud still works.
+              {t('copilot.noKannadaVoice')}
             </p>
           )}
         </div>
