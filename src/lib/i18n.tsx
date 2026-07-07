@@ -55,6 +55,7 @@ const en = {
   'nav.analytics': 'Analytics',
   'nav.offenders': 'Offender Risk',
   'nav.cases': 'Case Files',
+  'nav.sociology': 'Sociological Intel',
   'nav.audit': 'Audit Trail',
   // Roles
   'role.Investigator': 'Investigator',
@@ -133,6 +134,7 @@ const kn: Record<MessageKey, string> = {
   'nav.analytics': 'ವಿಶ್ಲೇಷಣೆ',
   'nav.offenders': 'ಅಪರಾಧಿ ಅಪಾಯ',
   'nav.cases': 'ಪ್ರಕರಣ ಕಡತಗಳು',
+  'nav.sociology': 'ಸಮಾಜಶಾಸ್ತ್ರೀಯ ಗುಪ್ತಚರ',
   'nav.audit': 'ಲೆಕ್ಕಪರಿಶೋಧನಾ ದಾಖಲೆ',
   'role.Investigator': 'ತನಿಖಾಧಿಕಾರಿ',
   'role.Analyst': 'ವಿಶ್ಲೇಷಕ',

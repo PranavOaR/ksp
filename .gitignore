@@ -39,5 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-data/
+# SQLite workspaces at repo root only — src/lib/data/ is source code
+/data/
 *.db
