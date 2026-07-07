@@ -123,6 +123,13 @@ body {
   color: var(--text-muted);
 }
 
+/* Card variant for stationary containers (e.g. chat panes) — no hover lift */
+.card-static,
+.card-static:hover {
+  transform: none;
+  box-shadow: 0 1px 2px rgba(27, 24, 19, 0.04), 0 8px 24px -18px rgba(27, 24, 19, 0.25);
+}
+
 .rise-in {
   animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }

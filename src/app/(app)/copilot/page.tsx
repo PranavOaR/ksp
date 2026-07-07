@@ -150,9 +150,15 @@ function CopilotChat() {
         </div>
       </div>
 
-      <div className="card flex-1 space-y-5 overflow-y-auto p-5">
+      <div className="card card-static flex-1 space-y-5 overflow-y-auto p-5">
         {turns.length === 0 && (
           <div className="py-10 text-center text-sm text-[var(--text-muted)]">
+            <span
+              aria-hidden
+              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] font-display text-xl font-black text-[var(--accent)]"
+            >
+              ದೃ
+            </span>
             <p className="mb-4">{t('copilot.emptyPrompt')}</p>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((suggestion) => (
@@ -228,13 +234,7 @@ function CopilotChat() {
           <input
             value={voice.isListening && voice.interimTranscript ? voice.interimTranscript : input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder={
-              voice.isListening
-                ? isKannada
-                  ? t('copilot.listening')
-                  : t('copilot.listening')
-                : t('copilot.inputPlaceholder')
-            }
+            placeholder={voice.isListening ? t('copilot.listening') : t('copilot.inputPlaceholder')}
             className="flex-1 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--series-1)]"
             disabled={isBusy}
             maxLength={500}
@@ -264,7 +264,7 @@ function CopilotChat() {
             <p className="text-xs text-red-600">{voice.recognitionError}</p>
           )}
           {shouldSpeakAnswers && isKannada && !voice.hasKannadaVoice && (
-            <p className="text-xs text-amber-400">
+            <p className="text-xs text-amber-700">
               {t('copilot.noKannadaVoice')}
             </p>
           )}
