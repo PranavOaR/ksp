@@ -40,6 +40,7 @@ export function TopBar() {
         </div>
         <div className="flex items-center gap-2">
         <WorkspaceSwitch />
+        <span aria-hidden className="mx-1 h-5 w-px bg-[var(--border-1)]" />
         <LangToggle />
         <button
           type="button"

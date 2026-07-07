@@ -49,12 +49,19 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all duration-200 ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`relative flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all duration-200 ${
                 isActive
                   ? 'bg-[var(--accent-soft)] font-semibold text-[var(--accent-deep)]'
                   : 'text-[var(--text-secondary)] hover:translate-x-0.5 hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
               }`}
             >
+              {isActive ? (
+                <span
+                  aria-hidden
+                  className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]"
+                />
+              ) : null}
               <span
                 aria-hidden
                 className={`w-4 text-center ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}
