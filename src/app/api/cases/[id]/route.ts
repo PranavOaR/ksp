@@ -13,6 +13,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   if (!session) {
     return fail('Sign in required.', 401);
   }
+  if (session.role !== 'Supervisor' && session.role !== 'Administrator') {
+    return fail('Case status updates require Supervisor or Administrator role.', 403);
+  }
   const { id } = await context.params;
   const firId = Number(id);
   if (!Number.isInteger(firId) || firId <= 0) {

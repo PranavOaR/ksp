@@ -1,6 +1,8 @@
-import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
+import { fail, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
+import { sessionFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
+import { createRateLimiter } from '@/lib/rateLimit';
 import { workspaceFromRequest } from '@/lib/workspace';
 import { isLlmEnabled, llmComposeAnswer, llmParseQuery } from '@/lib/intel/llm';
 import type { CopilotLanguage } from '@/lib/intel/llmCoerce';
@@ -16,6 +18,15 @@ interface ChatRequestBody {
 }
 
 const MAX_MESSAGE_LENGTH = 500;
+
+/** Generous for humans, tight enough to protect the Claude API budget. */
+const CHAT_REQUESTS_PER_MINUTE = 20;
+const RATE_WINDOW_MS = 60_000;
+
+const chatRateLimiter = createRateLimiter({
+  limit: CHAT_REQUESTS_PER_MINUTE,
+  windowMs: RATE_WINDOW_MS,
+});
 
 function isValidBody(body: unknown): body is ChatRequestBody {
   if (typeof body !== 'object' || body === null) return false;
@@ -43,6 +54,20 @@ async function understand(message: string, context?: QueryFilter): Promise<Under
 }
 
 export async function POST(request: Request) {
+  // The Copilot spends Claude API budget — session required, no header fallback.
+  const session = sessionFromRequest(request);
+  if (!session) {
+    return fail('Sign in required.', 401);
+  }
+
+  const rate = chatRateLimiter(`${session.role}:${session.name}`);
+  if (!rate.allowed) {
+    return fail(
+      `Too many Copilot requests — please wait ${rate.retryAfterSeconds}s and try again.`,
+      429
+    );
+  }
+
   const body = await request.json().catch(() => null);
   if (!isValidBody(body)) {
     return fail('Request must include a non-empty "message" string.');
@@ -53,7 +78,7 @@ export async function POST(request: Request) {
 
   return withErrorHandling(async () => {
     const db = getDb(workspaceFromRequest(request));
-    const role = roleFromRequest(request);
+    const role = session.role;
     const { parsed, language, engine } = await understand(body.message, body.context);
     const result = executeQuery(db, parsed.filter);
     logAudit(db, role, 'chat_query', `[${engine}/${language}] ${body.message}`);

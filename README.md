@@ -52,14 +52,17 @@ npm run build && npm start  # production build
 
 | PRD module | Feature | Where |
 |---|---|---|
-| **A1** Natural-language querying | **Claude API** (`claude-opus-4-8`, structured outputs) translates free-form questions into validated query filters; deterministic rule-engine parser as automatic offline fallback | `src/lib/intel/llm.ts`, `queryParser.ts`, `/copilot` |
+| **A1** Natural-language querying | **Claude API** (`claude-haiku-4-5`, structured outputs) translates free-form questions into validated query filters; deterministic rule-engine parser as automatic offline fallback | `src/lib/intel/llm.ts`, `queryParser.ts`, `/copilot` |
 | **A2** Context retention | Follow-ups like *"Only solved cases"* merge into the previous filter (both engines) | `llmCoerce.ts` / `isRefinement` logic |
 | **A3** Kannada support | Ask in ಕನ್ನಡ, get answers in ಕನ್ನಡ grounded in real database results (English fields like FIR numbers preserved) | `llm.ts` language detection + compose |
-| **A5** Conversation export | CSV export with queries, answers, confidence, evidence refs, timestamps | `/copilot` → Export CSV |
+| **A4** Voice interface | Speak questions (English/Kannada) via the browser SpeechRecognition API; answers read back with speech synthesis | `src/components/copilot/useVoice.ts` |
+| **A5** Conversation export | CSV and PDF export with queries, answers, confidence, evidence refs, timestamps | `/copilot` → Export CSV / PDF |
 | **B1/B3** Network graph + entity explorer | 2–3-hop BFS across persons, FIRs, phones, vehicles, bank accounts; custom SVG force layout | `src/lib/intel/network.ts`, `/network` |
 | **B2** Organized crime detection | Union-find clustering of repeat co-accused → crime rings (recovers all 5 seeded gangs) | `src/lib/intel/gangs.ts` |
 | **C1/C2** Temporal + geographic analytics | Monthly trend, hour-of-day, district and crime-type breakdowns | `/analytics` |
 | **C3** Hotspot detection | Intensity ranking + emerging-cluster flags (quarter-over-quarter growth) | `src/lib/intel/hotspots.ts` |
+| **C4** MO serial patterns | FIRs sharing an identical modus operandi clustered as potential serial offenders; banner on case detail | `src/lib/intel/moClusters.ts`, `/analytics` |
+| **D** Sociological intelligence | District crime rates correlated (Pearson) with 2011 Census literacy & urbanisation; explainable social-risk score | `src/lib/intel/sociology.ts`, `/sociology` |
 | **E1–E3** Offender profiling + risk scoring | Repeat-offender register; explainable weighted score (priors, network degree, recency, versatility) → Low/Medium/High | `src/lib/intel/riskScoring.ts`, `/offenders` |
 | **F1–F4** Investigator decision support | Auto case summary, timeline, similar-case retrieval (MO/type/location), suggested leads incl. financial referrals | `src/lib/intel/caseIntel.ts`, `/cases/[id]` |
 | **G (partial)** Financial links | Seeded transaction rings; high-value transaction leads on case pages | `seed.ts`, `caseIntel.ts` |
@@ -70,7 +73,7 @@ npm run build && npm start  # production build
 
 To enable the Claude-powered Copilot, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot transparently uses the offline rule engine — every response is badged with the engine that produced it.
 
-Not yet built (next phases): Hindi/Tamil/Telugu (A3 future languages), voice interface (A4), PDF export, sociological module (D), full money-trail visualization (G2), real RBAC with JWT auth.
+Not yet built (honest gaps): Hindi/Tamil/Telugu (A3 lists them as future languages — Kannada is fully supported), full money-trail graph visualization (G2 — financial rings and transaction leads are implemented), and hardened production auth (JWT/SSO — the demo uses session-cookie RBAC-lite).
 
 ## Architecture
 
@@ -94,12 +97,6 @@ Design notes:
 - **API envelope** is uniform: `{ success, data, error }`; failures log server-side and return generic messages.
 - Chart palette follows a CVD-validated dark-mode palette (all contrast/colorblind checks pass).
 
-## Demo script (2 minutes)
+## Demo script
 
-1. **Overview** — KPIs, 3 emerging-hotspot alerts.
-2. **Copilot** — ask *"Show theft cases in Mysuru"*, then *"Only solved cases"* (context retention); expand the reasoning trail; export CSV.
-3. **Network Intel** — open Ring #1, click a member, watch the 2-hop entity graph; bump to 3 hops.
-4. **Analytics** — trend line with dashed forecast; night-hour concentration; emerging hotspots in amber.
-5. **Offenders** — filter High risk; note explainable score bars.
-6. **Case file** — open any FIR: summary, timeline, similar cases by identical MO, leads (including financial referrals).
-7. **Audit** — everything you just did is logged with your role.
+The full 2-minute walkthrough (landing → login → Copilot in English, Kannada and voice → network rings → financial intel → live workspace → audit) lives in [`docs/demo-script.md`](docs/demo-script.md). The system architecture and Copilot data flow are documented in [`docs/architecture.md`](docs/architecture.md).
