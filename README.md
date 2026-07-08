@@ -37,14 +37,14 @@ The SQLite database (`data/drishti.db`) is created and seeded automatically on f
 | **D — Sociology** | Crime rates correlated with 2011 Census literacy & urbanisation; social-risk score per district | `src/lib/intel/sociology.ts`, `src/lib/data/census.ts` |
 | **E — Offenders** | Repeat-offender register; explainable risk score (priors + network + recency + versatility) | `src/lib/intel/riskScoring.ts` |
 | **F — Case intel** | Auto case summary, timeline, similar-case retrieval, investigative leads | `src/lib/intel/caseIntel.ts` |
-| **G — Financial** | Seeded transaction rings; high-value leads on case pages | `seed.ts`, `caseIntel.ts` |
+| **G — Financial** | Money-trail graph with circular-transfer (layering) ring detection, high-value transaction leads, dedicated Financial Intel page | `src/lib/intel/financial.ts`, `/financial` |
 | **H — Forecasting** | Least-squares 3-month forecast; emerging-hotspot early-warning alerts | `src/lib/intel/forecast.ts` |
 | **I — Explainable AI** | Evidence FIR refs, reasoning trail, confidence score on every Copilot response | `/copilot` response cards |
 | **J — Governance** | RBAC-lite role switcher; every query, view and export audit-logged | `src/lib/audit.ts`, `authShared.ts` |
 
 ```bash
 npm test                    # vitest unit + integration suites
-npx vitest run --coverage   # coverage report (95%+ on the intel core)
+npx vitest run --coverage   # coverage report (91%+ stmts on the intel core)
 npm run build && npm start  # production build
 ```
 
@@ -65,7 +65,7 @@ npm run build && npm start  # production build
 | **D** Sociological intelligence | District crime rates correlated (Pearson) with 2011 Census literacy & urbanisation; explainable social-risk score | `src/lib/intel/sociology.ts`, `/sociology` |
 | **E1–E3** Offender profiling + risk scoring | Repeat-offender register; explainable weighted score (priors, network degree, recency, versatility) → Low/Medium/High | `src/lib/intel/riskScoring.ts`, `/offenders` |
 | **F1–F4** Investigator decision support | Auto case summary, timeline, similar-case retrieval (MO/type/location), suggested leads incl. financial referrals | `src/lib/intel/caseIntel.ts`, `/cases/[id]` |
-| **G (partial)** Financial links | Seeded transaction rings; high-value transaction leads on case pages | `seed.ts`, `caseIntel.ts` |
+| **G1–G3** Financial intelligence | Money-trail graph visualization, circular-transfer (layering) ring detection, high-value transaction leads on case pages + dedicated Financial page | `src/lib/intel/financial.ts`, `/financial`, `caseIntel.ts` |
 | **H1–H3** Forecasting + early warning | Least-squares 3-month forecast; emerging-hotspot alerts on the overview | `src/lib/intel/forecast.ts`, `/`, `/analytics` |
 | **I1–I3** Explainable AI | Every answer carries evidence (FIR numbers), a reasoning trail, and a confidence score | `/copilot` response cards |
 | **J1** RBAC-lite | Role switcher (Investigator/Analyst/Supervisor/Administrator); role tags every audit row | top bar |
@@ -73,7 +73,7 @@ npm run build && npm start  # production build
 
 To enable the Claude-powered Copilot, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot transparently uses the offline rule engine — every response is badged with the engine that produced it.
 
-Not yet built (honest gaps): Hindi/Tamil/Telugu (A3 lists them as future languages — Kannada is fully supported), full money-trail graph visualization (G2 — financial rings and transaction leads are implemented), and hardened production auth (JWT/SSO — the demo uses session-cookie RBAC-lite).
+Not yet built (honest gaps): Hindi/Tamil/Telugu (A3 lists them as future languages — Kannada is fully supported), and hardened production auth (JWT/SSO — the demo uses session-cookie RBAC-lite).
 
 ## Architecture
 

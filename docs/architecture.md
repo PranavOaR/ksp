@@ -69,7 +69,7 @@ This traces exactly what happens when an officer types *"Show theft cases in Mys
 | Sociological intelligence | D | `src/lib/intel/sociology.ts`, `/sociology` |
 | Offender profiling + risk scoring | E1–E3 | `src/lib/intel/riskScoring.ts`, `/offenders` |
 | Investigator decision support | F1–F4 | `src/lib/intel/caseIntel.ts`, `/cases/[id]` |
-| Financial links | G (partial) | `seed.ts`, `caseIntel.ts` |
+| Financial intelligence (money-trail graph, ring detection) | G1–G3 | `src/lib/intel/financial.ts`, `/financial` |
 | Forecasting + early warning | H1–H3 | `src/lib/intel/forecast.ts` |
 | Explainable AI | I1–I3 | `/copilot` response cards |
 | RBAC-lite | J1 | `src/lib/authShared.ts` |
