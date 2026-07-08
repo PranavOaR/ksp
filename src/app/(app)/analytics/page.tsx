@@ -57,8 +57,9 @@ function HotspotList({ hotspots }: { hotspots: Hotspot[] }) {
 }
 
 function MOPatternsList({ clusters }: { clusters: MOCluster[] }) {
+  const { t } = useLanguage();
   if (clusters.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)]">No serial MO patterns detected.</p>;
+    return <p className="text-sm text-[var(--text-muted)]">{t('analytics.moCluster.none')}</p>;
   }
   return (
     <ul className="space-y-2">
@@ -69,7 +70,7 @@ function MOPatternsList({ clusters }: { clusters: MOCluster[] }) {
         >
           <span className="text-sm text-[var(--text-primary)]">{cluster.mo}</span>
           <span className="ml-3 shrink-0 rounded-full bg-[var(--series-3)]/15 px-2.5 py-0.5 text-[11px] font-bold text-[var(--series-3)]">
-            {cluster.count} cases
+            {cluster.count} {t('analytics.moCluster.cases')}
           </span>
         </li>
       ))}
@@ -124,8 +125,8 @@ export default function AnalyticsPage() {
       </div>
 
       <Card
-        title="Modus operandi serial patterns (C4)"
-        subtitle="FIR groups sharing an identical modus operandi — potential serial offenders"
+        title={t('analytics.moCluster.title')}
+        subtitle={t('analytics.moCluster.subtitle')}
       >
         <MOPatternsList clusters={data.moClusters} />
       </Card>

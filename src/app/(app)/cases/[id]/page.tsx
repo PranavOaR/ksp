@@ -8,6 +8,7 @@ import { FIR_STATUSES } from '@/lib/constants';
 import type { CaseIntelligence } from '@/lib/intel/caseIntel';
 import { Card, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/ui';
 import { useUser } from '@/components/UserProvider';
+import { useLanguage } from '@/lib/i18n';
 
 interface MOSerialPattern {
   isSerial: boolean;
@@ -24,6 +25,7 @@ function PersonList({
   people: CaseIntelligence['accused'];
   emptyLabel: string;
 }) {
+  const { t } = useLanguage();
   if (people.length === 0) {
     return <p className="text-sm text-[var(--text-muted)]">{emptyLabel}</p>;
   }
@@ -42,7 +44,7 @@ function PersonList({
           </div>
           {typeof person.priorCases === 'number' && person.priorCases > 1 && (
             <span className="rounded bg-red-500/15 px-2 py-0.5 text-[11px] text-red-600">
-              {person.priorCases} cases on record
+              {person.priorCases} {t('caseDetail.summary.priorCases')}
             </span>
           )}
         </li>
@@ -52,6 +54,7 @@ function PersonList({
 }
 
 export default function CaseDetailPage() {
+  const { t } = useLanguage();
   const params = useParams<{ id: string }>();
   const user = useUser();
   const canUpdateStatus = user.role === 'Supervisor' || user.role === 'Administrator';
@@ -76,7 +79,7 @@ export default function CaseDetailPage() {
   };
 
   if (error) return <ErrorState message={error} />;
-  if (!data) return <LoadingState label="Assembling case intelligence…" />;
+  if (!data) return <LoadingState label={t('caseDetail.loading')} />;
 
   const { fir, moSerialPattern } = data;
 
@@ -92,14 +95,18 @@ export default function CaseDetailPage() {
         <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
           <span className="mt-0.5 text-amber-500" aria-hidden>⚠</span>
           <p className="text-sm text-amber-700">
-            <span className="font-semibold">Part of a series of {moSerialPattern.clusterSize} cases</span>{' '}
-            sharing the same modus operandi:{' '}
-            <span className="italic">"{moSerialPattern.mo}"</span>. Review linked cases for serial offender patterns.
+            <span className="font-semibold">
+              {t('caseDetail.serialBanner.label')} {moSerialPattern.clusterSize} {t('caseDetail.serialBanner.suffix')}:
+            </span>{' '}
+            <span className="italic">&ldquo;{moSerialPattern.mo}&rdquo;</span>. {t('caseDetail.serialBanner.cta')}
           </p>
         </div>
       )}
 
-      <Card title="Automated case summary" subtitle="Generated from FIR record and linked entities (F1)">
+      <Card
+        title={t('caseDetail.summary.title')}
+        subtitle={t('caseDetail.summary.subtitle')}
+      >
         <div className="mb-3 flex items-center gap-3">
           <StatusBadge status={fir.status} />
           {canUpdateStatus && (
@@ -107,7 +114,7 @@ export default function CaseDetailPage() {
               value={fir.status}
               onChange={(event) => void updateStatus(event.target.value)}
               className="btn-ghost px-3 py-1 text-xs outline-none"
-              title="Update case status (audit-logged)"
+              title={t('caseDetail.summary.statusUpdate')}
             >
               {FIR_STATUSES.map((statusOption) => (
                 <option key={statusOption}>{statusOption}</option>
@@ -115,32 +122,35 @@ export default function CaseDetailPage() {
             </select>
           )}
           <span className="text-xs text-[var(--text-muted)]">
-            Occurred {fir.occurred_at.replace('T', ' at ')}
+            {t('caseDetail.summary.occurred')} {fir.occurred_at.replace('T', ' at ')}
           </span>
         </div>
         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-          {fir.description} The case is currently <strong>{fir.status.toLowerCase()}</strong>
+          {fir.description} {t('caseDetail.summary.currentlyPrefix')} <strong>{fir.status.toLowerCase()}</strong>
           {data.accused.length > 0 &&
-            ` with ${data.accused.length} named accused${
+            ` ${t('caseDetail.summary.withAccused')} ${data.accused.length} ${t('caseDetail.summary.namedAccused')}${
               data.accused.some((person) => (person.priorCases ?? 0) > 1)
-                ? ', including repeat offenders'
+                ? t('caseDetail.summary.includingRepeat')
                 : ''
             }`}
-          . Modus operandi: {fir.modus_operandi.toLowerCase()}.
+          . {t('caseDetail.summary.moPrefix')} {fir.modus_operandi.toLowerCase()}.
         </p>
       </Card>
 
       <div className="stagger grid gap-6 lg:grid-cols-2">
-        <Card title="Accused">
-          <PersonList people={data.accused} emptyLabel="No accused identified yet." />
+        <Card title={t('caseDetail.accused.title')}>
+          <PersonList people={data.accused} emptyLabel={t('caseDetail.accused.empty')} />
         </Card>
-        <Card title="Victims">
-          <PersonList people={data.victims} emptyLabel="No victims recorded." />
+        <Card title={t('caseDetail.victims.title')}>
+          <PersonList people={data.victims} emptyLabel={t('caseDetail.victims.empty')} />
         </Card>
       </div>
 
       <div className="stagger grid gap-6 lg:grid-cols-2">
-        <Card title="Investigation timeline" subtitle="Chronology of recorded events (F2)">
+        <Card
+          title={t('caseDetail.timeline.title')}
+          subtitle={t('caseDetail.timeline.subtitle')}
+        >
           <ol className="relative space-y-4 border-l border-[var(--border-1)] pl-5">
             {data.timeline.map((entry, index) => (
               <li key={`${entry.at}-${index}`} className="relative">
@@ -154,7 +164,10 @@ export default function CaseDetailPage() {
           </ol>
         </Card>
 
-        <Card title="Suggested investigative leads" subtitle="Generated from network and financial links (F4)">
+        <Card
+          title={t('caseDetail.leads.title')}
+          subtitle={t('caseDetail.leads.subtitle')}
+        >
           <ul className="space-y-2">
             {data.leads.map((lead) => (
               <li
@@ -171,9 +184,12 @@ export default function CaseDetailPage() {
         </Card>
       </div>
 
-      <Card title="Similar cases" subtitle="Matched on modus operandi, crime type and location (F3)">
+      <Card
+        title={t('caseDetail.similar.title')}
+        subtitle={t('caseDetail.similar.subtitle')}
+      >
         {data.similarCases.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">No similar cases found.</p>
+          <p className="text-sm text-[var(--text-muted)]">{t('caseDetail.similar.none')}</p>
         ) : (
           <ul className="space-y-2">
             {data.similarCases.map((similar) => (
