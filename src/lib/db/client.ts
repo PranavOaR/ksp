@@ -2,8 +2,8 @@ import DatabaseConstructor, { type Database } from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Workspace } from '../workspace';
-import { SCHEMA_SQL } from './schema';
-import { isSeeded, seedDatabase, seedStationsOnly } from './seed';
+import { applyMigrations, SCHEMA_SQL } from './schema';
+import { ensureV2Data, isSeeded, seedDatabase, seedStationsOnly } from './seed';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILES: Record<Workspace, string> = {
@@ -21,11 +21,17 @@ function initDb(workspace: Workspace): Database {
   const db = new DatabaseConstructor(path.join(DATA_DIR, DB_FILES[workspace]));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA_SQL);
+  applyMigrations(db);
   if (workspace === 'demo') {
     if (!isSeeded(db)) seedDatabase(db);
+    // Pre-existing demo DBs migrate in place: layer v2 data over v1 rows
+    else ensureV2Data(db, { synthesizeDetails: true });
   } else {
-    // Live workspace holds only real records; stations are reference data
+    // Live workspace holds only real records; stations, org hierarchy and
+    // legal lookups are reference data. Existing cases get official columns
+    // backfilled, but no synthetic complainants/arrests are invented.
     seedStationsOnly(db);
+    ensureV2Data(db, { synthesizeDetails: false });
   }
   return db;
 }
