@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/clientApi';
 import type { NetworkGraph } from '@/lib/intel/types';
 import { NetworkGraphView } from '@/components/NetworkGraph';
@@ -18,11 +19,17 @@ interface NetworkResponse {
   rings: RingSummary[];
 }
 
-export default function NetworkPage() {
+function NetworkPageInner() {
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
   const [rings, setRings] = useState<RingSummary[] | null>(null);
   const [graph, setGraph] = useState<NetworkGraph | null>(null);
-  const [selected, setSelected] = useState<{ personId: number; name: string } | null>(null);
+  // Deep link from the Copilot: /network?personId=12&name=Ravi%20Kumar
+  const [selected, setSelected] = useState<{ personId: number; name: string } | null>(() => {
+    const personId = Number(searchParams.get('personId'));
+    const name = searchParams.get('name');
+    return Number.isInteger(personId) && personId > 0 && name ? { personId, name } : null;
+  });
   const [hops, setHops] = useState(2);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingGraph, setIsLoadingGraph] = useState(false);
@@ -132,5 +139,14 @@ export default function NetworkPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function NetworkPage() {
+  // useSearchParams requires a Suspense boundary in the App Router.
+  return (
+    <Suspense fallback={null}>
+      <NetworkPageInner />
+    </Suspense>
   );
 }

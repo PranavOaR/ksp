@@ -186,7 +186,7 @@ function CopilotChat() {
               {turn.error ? (
                 <p className="text-sm text-red-600">{turn.error}</p>
               ) : turn.response ? (
-                <ResponseCard response={turn.response} />
+                <ResponseCard response={turn.response} onFollowUp={(question) => void ask(question)} />
               ) : (
                 <p className="animate-pulse text-sm text-[var(--text-muted)]">{t('copilot.analysing')}</p>
               )}

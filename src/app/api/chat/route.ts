@@ -115,6 +115,12 @@ export async function POST(request: Request) {
       filter: parsed.filter,
       engine,
       language: answerLanguage,
+      ...(result.network ? { network: result.network } : {}),
+      ...(result.financial ? { financial: result.financial } : {}),
+      ...(result.actSection ? { actSection: result.actSection } : {}),
+      ...(result.hotspots ? { hotspots: result.hotspots } : {}),
+      ...(result.candidates ? { candidates: result.candidates } : {}),
+      ...(result.caseIntel ? { caseId: result.caseIntel.fir.id } : {}),
     };
   });
 }

@@ -24,12 +24,33 @@ function getClient(): Anthropic {
 }
 
 const ParseSchema = z.object({
-  intent: z.enum(['listFirs', 'listOffenders', 'count', 'trend']),
+  intent: z.enum([
+    'listFirs', 'listOffenders', 'count', 'trend',
+    'personProfile', 'caseDetail', 'networkQuery', 'financialSummary',
+    'actSection', 'hotspotQuery', 'investigate',
+  ]),
   crimeType: z.enum(CRIME_TYPES).nullable(),
   district: z.enum(DISTRICTS).nullable(),
   status: z.enum(FIR_STATUSES).nullable(),
   fromDate: z.string().nullable().describe('ISO date YYYY-MM-DD, or null'),
   toDate: z.string().nullable().describe('ISO date YYYY-MM-DD, or null'),
+  personName: z
+    .string()
+    .nullable()
+    .describe('Person the question is about, in Latin script, or null'),
+  firNumber: z
+    .string()
+    .nullable()
+    .describe('Specific case number mentioned (FIR/YYYY/XXX/0000 or 18-digit CrimeNo), or null'),
+  actCode: z
+    .enum(['BNS', 'ITACT', 'NDPS', 'ARMS'])
+    .nullable()
+    .describe('Legal act when a section is mentioned; IPC maps to BNS'),
+  sectionCode: z.string().nullable().describe('Legal section number like 303 or 66C, or null'),
+  moKeyword: z
+    .string()
+    .nullable()
+    .describe('Modus operandi phrase the user is searching for, or null'),
   isRefinement: z
     .boolean()
     .describe('true when the message refines the previous query instead of starting a new one'),
@@ -49,7 +70,16 @@ Database facts:
 
 Rules:
 - Map Kannada crime words to the English enum values (e.g. ಕಳ್ಳತನ→Theft, ಕೊಲೆ→Murder, ದರೋಡೆ→Burglary, ಸೈಬರ್ ಅಪರಾಧ→Cybercrime, ವಂಚನೆ→Fraud).
-- intent "listOffenders" for repeat/habitual offender questions, "count" for how-many questions, "trend" for trend/forecast questions, otherwise "listFirs".
+- Intent selection:
+  - "investigate" when asked for an investigation brief / full workup on a named person ("Investigate Ravi Kumar", "ರವಿ ಕುಮಾರ್ ಬಗ್ಗೆ ತನಿಖಾ ವರದಿ ಕೊಡಿ") — also set personName.
+  - "networkQuery" for associates/connections/network questions about a person ("who is linked to Salim Khan") — also set personName.
+  - "personProfile" for who-is/priors/history questions about a person — also set personName.
+  - "caseDetail" when a specific case number is mentioned — also set firNumber.
+  - "actSection" for legal-section questions ("cases under BNS 303", "IPC 302 cases" → actCode BNS, sectionCode 303/103) — also set actCode + sectionCode.
+  - "financialSummary" for money-trail / suspicious-transaction / laundering questions.
+  - "hotspotQuery" for hotspot / crime-density / where-is-crime-concentrated questions.
+  - "listOffenders" for repeat/habitual offender questions, "count" for how-many questions, "trend" for trend/forecast questions, otherwise "listFirs".
+- Person names: keep in Latin script, strip honorifics (Mr/Shri), null if no person is named.
 - If a previous filter is provided and the new message narrows it (e.g. "only solved cases"), set isRefinement true and output only the newly mentioned fields.
 - Leave fields null when the user did not mention them.`;
 
