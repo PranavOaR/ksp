@@ -3,6 +3,7 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 import { CRIME_TYPES, DATASET_END, DATASET_START, DISTRICTS, FIR_STATUSES } from '../constants';
 import { coerceLlmParse, type CopilotLanguage } from './llmCoerce';
+import type { InvestigationFindings } from './agent';
 import type { FirRecord, OffenderProfile, ParsedQuery, QueryFilter } from './types';
 
 const MODEL = 'claude-haiku-4-5';
@@ -154,6 +155,41 @@ export async function llmComposeAnswer(input: {
   const textBlock = response.content.find((block) => block.type === 'text');
   if (!textBlock || !('text' in textBlock) || !textBlock.text.trim()) {
     throw new Error('LLM compose returned no text');
+  }
+  return textBlock.text.trim();
+}
+
+/**
+ * Drafts the investigation lead memo (Module A′ step 8), grounded STRICTLY
+ * on the agent's structured findings. Callers fall back to the
+ * deterministic template in agent.ts when this throws or no key is set.
+ */
+export async function llmComposeMemo(input: {
+  targetName: string;
+  findings: InvestigationFindings;
+  language: CopilotLanguage;
+}): Promise<string> {
+  const client = getClient();
+  const languageRule =
+    input.language === 'kn'
+      ? 'Write in natural Kannada (ಕನ್ನಡ), keeping FIR numbers, names and crime-type terms in English/Latin script.'
+      : 'Write in clear, plain English.';
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: COMPOSE_MAX_TOKENS,
+    system: `You are DRISHTI's investigation agent drafting a lead memo for a Karnataka State Police investigator. Use ONLY the structured findings provided — never invent facts, names, or case numbers. Structure: subject line, 2-4 short factual paragraphs (priors, network, financial, geography — omit empty areas), then 2-3 concrete suggested next steps drawn from the findings. Cite FIR numbers inline as evidence. PLAIN TEXT ONLY — no markdown of any kind (no **, no #, no bullets), no disclaimers. ${languageRule}`,
+    messages: [
+      {
+        role: 'user',
+        content: `Target: ${input.targetName}\n\nAgent findings (ground truth): ${JSON.stringify(input.findings)}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === 'text');
+  if (!textBlock || !('text' in textBlock) || !textBlock.text.trim()) {
+    throw new Error('LLM memo compose returned no text');
   }
   return textBlock.text.trim();
 }

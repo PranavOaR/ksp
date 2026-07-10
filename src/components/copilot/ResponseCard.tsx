@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { RiskBadge, StatusBadge } from '@/components/ui';
 import { useLanguage } from '@/lib/i18n';
+import { AgentTraceCard } from './AgentTraceCard';
 import type { ChatResponse } from './types';
 
 function ConfidenceMeter({ value }: { value: number }) {
@@ -54,6 +55,8 @@ export function ResponseCard({
           {response.engine === 'claude' ? '✦ Claude AI' : 'Rule engine'}
         </span>
       </div>
+
+      {response.agent && <AgentTraceCard agent={response.agent} />}
 
       {response.kind === 'candidates' && response.candidates && (
         <div className="flex flex-wrap gap-2">

@@ -7,7 +7,14 @@ import type {
   PersonCandidate,
   QueryFilter,
 } from '@/lib/intel/types';
+import type { AgentStep } from '@/lib/intel/agent';
 import type { Hotspot } from '@/lib/intel/hotspots';
+
+export interface AgentPayload {
+  target: { personId: number; name: string };
+  steps: AgentStep[];
+  memo: string | null;
+}
 
 export interface ChatResponse {
   answer: string;
@@ -22,7 +29,8 @@ export interface ChatResponse {
     | 'actSection'
     | 'hotspots'
     | 'candidates'
-    | 'noMatch';
+    | 'noMatch'
+    | 'agent';
   firs: FirRecord[];
   offenders: OffenderProfile[];
   totalCount: number;
@@ -41,6 +49,8 @@ export interface ChatResponse {
   candidates?: PersonCandidate[];
   /** caseDetail: id for the deep link to /cases/[id]. */
   caseId?: number;
+  /** investigate: the agent's step trace + drafted lead memo (Module A′). */
+  agent?: AgentPayload;
 }
 
 export interface ChatTurn {

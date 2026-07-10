@@ -4,7 +4,8 @@ import { sessionFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import { createRateLimiter } from '@/lib/rateLimit';
 import { workspaceFromRequest } from '@/lib/workspace';
-import { isLlmEnabled, llmComposeAnswer, llmParseQuery } from '@/lib/intel/llm';
+import { composeMemoFallback, runInvestigation, type AgentStep } from '@/lib/intel/agent';
+import { isLlmEnabled, llmComposeAnswer, llmComposeMemo, llmParseQuery } from '@/lib/intel/llm';
 import type { CopilotLanguage } from '@/lib/intel/llmCoerce';
 import { parseQuery } from '@/lib/intel/queryParser';
 import { executeQuery } from '@/lib/intel/queryExecutor';
@@ -27,6 +28,68 @@ const chatRateLimiter = createRateLimiter({
   limit: CHAT_REQUESTS_PER_MINUTE,
   windowMs: RATE_WINDOW_MS,
 });
+
+/**
+ * Runs the investigation playbook + memo composition and shapes the chat
+ * response. The memo is the only LLM call; its real duration lands in the
+ * trace as the final step, with the deterministic template as fallback.
+ */
+async function runAgent(
+  db: ReturnType<typeof getDb>,
+  personName: string,
+  engine: 'claude' | 'rules',
+  memoLanguage: CopilotLanguage
+) {
+  const investigation = runInvestigation(db, personName);
+
+  let memo: string | null = null;
+  let memoEngine: 'claude' | 'rules' = 'rules';
+  if (investigation.target) {
+    const startedAt = performance.now();
+    if (engine === 'claude' && isLlmEnabled()) {
+      try {
+        memo = await llmComposeMemo({
+          targetName: investigation.target.name,
+          findings: investigation.findings,
+          language: memoLanguage,
+        });
+        memoEngine = 'claude';
+      } catch (error) {
+        console.error('[drishti-agent] memo compose failed, using template:', error);
+      }
+    }
+    if (!memo) {
+      memo = composeMemoFallback(investigation.target.name, investigation.findings);
+    }
+    const memoStep: AgentStep = {
+      id: 'memo',
+      title: 'Draft lead memo',
+      tool: memoEngine === 'claude' ? 'Claude (grounded on findings)' : 'deterministic template',
+      status: 'done',
+      durationMs: Math.max(1, Math.round(performance.now() - startedAt)),
+      summary: 'Lead memo drafted from the collected findings.',
+      evidence: [],
+    };
+    investigation.steps.push(memoStep);
+  }
+
+  const evidence = investigation.steps.flatMap((step) => step.evidence);
+  return {
+    answer: investigation.target
+      ? `Investigation brief on ${investigation.target.name} — ${investigation.steps.length} steps completed.`
+      : investigation.steps[0]?.summary ?? `Could not resolve "${personName}".`,
+    kind: investigation.candidates?.length ? ('candidates' as const) : ('agent' as const),
+    firs: [],
+    offenders: investigation.findings.profile ? [investigation.findings.profile] : [],
+    totalCount: investigation.findings.priorCases.length,
+    evidence: [...new Set(evidence)].slice(0, 10),
+    engine,
+    ...(investigation.candidates ? { candidates: investigation.candidates } : {}),
+    ...(investigation.target
+      ? { agent: { target: investigation.target, steps: investigation.steps, memo } }
+      : {}),
+  };
+}
 
 function isValidBody(body: unknown): body is ChatRequestBody {
   if (typeof body !== 'object' || body === null) return false;
@@ -80,6 +143,28 @@ export async function POST(request: Request) {
     const db = getDb(workspaceFromRequest(request));
     const role = session.role;
     const { parsed, language, engine } = await understand(body.message, body.context);
+
+    // Module A′: "investigate <person>" fans out into the multi-step agent
+    // instead of a single query. The agent trace is the response.
+    if (parsed.filter.intent === 'investigate' && parsed.filter.personName) {
+      const wantsKannadaMemo = language === 'kn' || body.answerLanguage === 'kn';
+      const agentResponse = await runAgent(
+        db,
+        parsed.filter.personName,
+        engine,
+        wantsKannadaMemo ? 'kn' : 'en'
+      );
+      logAudit(db, role, 'agent_investigation', `[${engine}] ${parsed.filter.personName}`);
+      return {
+        ...agentResponse,
+        reasoningTrail: parsed.matched,
+        confidence: parsed.confidence,
+        isRefinement: false,
+        filter: parsed.filter,
+        language: 'en' as const,
+      };
+    }
+
     const result = executeQuery(db, parsed.filter);
     logAudit(db, role, 'chat_query', `[${engine}/${language}] ${body.message}`);
 
