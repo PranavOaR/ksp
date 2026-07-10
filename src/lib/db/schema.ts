@@ -316,10 +316,41 @@ CREATE INDEX IF NOT EXISTS idx_cs_case ON chargesheet_details(case_master_id);
 `;
 
 /**
+ * v3: legal knowledge base for document-grounded Copilot answers (RAG-lite,
+ * Module A6). kb_docs holds act/section text + SOP passages; kb_fts is an
+ * external-content FTS5 index kept in sync by triggers.
+ */
+const MIGRATION_V3 = `
+CREATE TABLE IF NOT EXISTS kb_docs (
+  id INTEGER PRIMARY KEY,
+  source TEXT NOT NULL,
+  title TEXT NOT NULL UNIQUE,
+  content TEXT NOT NULL
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS kb_fts USING fts5(
+  title, content, content='kb_docs', content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS kb_docs_ai AFTER INSERT ON kb_docs BEGIN
+  INSERT INTO kb_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
+END;
+CREATE TRIGGER IF NOT EXISTS kb_docs_ad AFTER DELETE ON kb_docs BEGIN
+  INSERT INTO kb_fts(kb_fts, rowid, title, content)
+  VALUES ('delete', old.id, old.title, old.content);
+END;
+CREATE TRIGGER IF NOT EXISTS kb_docs_au AFTER UPDATE ON kb_docs BEGIN
+  INSERT INTO kb_fts(kb_fts, rowid, title, content)
+  VALUES ('delete', old.id, old.title, old.content);
+  INSERT INTO kb_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
+END;
+`;
+
+/**
  * Ordered migration list; MIGRATIONS[n] moves the DB from user_version n to
  * n + 1. Never edit a shipped migration — append a new one.
  */
-export const MIGRATIONS: readonly string[] = [MIGRATION_V2];
+export const MIGRATIONS: readonly string[] = [MIGRATION_V2, MIGRATION_V3];
 
 /**
  * The official KSP FIR System surface: every entity from the ER diagram,

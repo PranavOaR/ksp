@@ -18,6 +18,7 @@ import {
   RANKS,
   RELIGIONS,
   SECTIONS,
+  SOP_SNIPPETS,
   STATES,
   STATE_KARNATAKA_ID,
   UNIT_TYPES,
@@ -484,8 +485,9 @@ export function backfillOfficialCaseData(
   run();
 }
 
-/** All v2 tables, in FK-safe deletion order (children first). */
+/** All v2+ tables, in FK-safe deletion order (children first). */
 export const V2_TABLES_WIPE_ORDER = [
+  'kb_docs',
   'chargesheet_details',
   'arrest_surrender',
   'act_section_association',
@@ -513,10 +515,40 @@ export const V2_TABLES_WIPE_ORDER = [
   'states',
 ] as const;
 
+/** True once MIGRATION_V3 (knowledge base) has been applied. */
+export function hasKnowledgeBase(db: Database): boolean {
+  return (db.pragma('user_version', { simple: true }) as number) >= 2;
+}
+
+/** Legal KB (Module A6): sections + SOPs into kb_docs (FTS via triggers). */
+export function seedKnowledgeBase(db: Database): void {
+  if (!hasKnowledgeBase(db)) return;
+  const insert = db.prepare(
+    'INSERT OR IGNORE INTO kb_docs (source, title, content) VALUES (?, ?, ?)'
+  );
+  const shortNameByAct = new Map<string, string>(ACTS.map((act) => [act.code, act.shortName]));
+  const run = db.transaction(() => {
+    for (const section of SECTIONS) {
+      const shortName = shortNameByAct.get(section.actCode) ?? section.actCode;
+      const headline = section.description.split('—')[0].trim();
+      insert.run(
+        shortName,
+        `${shortName} §${section.sectionCode} — ${headline}`,
+        section.description
+      );
+    }
+    for (const snippet of SOP_SNIPPETS) {
+      insert.run('SOP', snippet.title, snippet.content);
+    }
+  });
+  run();
+}
+
 /** Full v2 pass for a workspace DB. Idempotent; call after v1 seeding. */
 export function seedV2(db: Database, rng: Rng, options: BackfillOptions): void {
   seedLookups(db);
   seedUnits(db);
   seedEmployees(db, rng);
   backfillOfficialCaseData(db, rng, options);
+  seedKnowledgeBase(db);
 }

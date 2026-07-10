@@ -58,6 +58,23 @@ export function ResponseCard({
 
       {response.agent && <AgentTraceCard agent={response.agent} />}
 
+      {response.kind === 'knowledge' && response.knowledge && (
+        <div className="space-y-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--series-3)]/15 px-2 py-0.5 text-[10px] font-medium text-[var(--series-3)]">
+            ⚖ Knowledge base answer
+          </span>
+          {response.knowledge.slice(0, 4).map((passage) => (
+            <div
+              key={passage.title}
+              className="rounded-lg border-l-2 border-[var(--series-3)]/60 bg-[var(--surface-2)]/60 p-3 text-xs"
+            >
+              <span className="font-semibold text-[var(--text-primary)]">{passage.title}</span>
+              <p className="mt-1 text-[var(--text-secondary)]">{passage.snippet}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {response.kind === 'candidates' && response.candidates && (
         <div className="flex flex-wrap gap-2">
           {response.candidates.map((candidate) => (

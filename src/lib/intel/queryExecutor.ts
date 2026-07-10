@@ -4,7 +4,8 @@ import { buildMoneyTrail } from './financial';
 import { detectHotspots, type Hotspot, type RegionCount } from './hotspots';
 import { buildNetwork } from './network';
 import { getOffenderProfiles } from './offenders';
-import { hasV2Schema } from '../db/seedV2';
+import { composeExtractiveAnswer, retrieveLegal, type KnowledgePassage } from './knowledge';
+import { hasKnowledgeBase, hasV2Schema } from '../db/seedV2';
 import type {
   ActSectionInfo,
   FinancialSummaryData,
@@ -31,7 +32,8 @@ export interface QueryResult {
     | 'actSection'
     | 'hotspots'
     | 'candidates'
-    | 'noMatch';
+    | 'noMatch'
+    | 'knowledge';
   firs: FirRecord[];
   offenders: OffenderProfile[];
   totalCount: number;
@@ -46,6 +48,7 @@ export interface QueryResult {
   actSection?: ActSectionInfo;
   hotspots?: Hotspot[];
   candidates?: PersonCandidate[];
+  knowledge?: KnowledgePassage[];
 }
 
 function emptyResult(kind: QueryResult['kind'], summary: string): QueryResult {
@@ -395,6 +398,27 @@ function executeHotspotQuery(db: Database, filter: QueryFilter): QueryResult {
   };
 }
 
+/**
+ * Knowledge-base answer mode (Module A6): retrieval over legal texts +
+ * SOPs. The deterministic answer is extractive; the chat route upgrades it
+ * to a Claude-grounded composition when the LLM path is live.
+ */
+function executeLegalQuestion(db: Database, filter: QueryFilter): QueryResult {
+  if (!hasKnowledgeBase(db)) {
+    return emptyResult('noMatch', 'The legal knowledge base is not available in this workspace.');
+  }
+  const passages = retrieveLegal(db, filter.kbQuery ?? '');
+  return {
+    kind: 'knowledge',
+    firs: [],
+    offenders: [],
+    totalCount: passages.length,
+    evidence: passages.map((passage) => passage.title),
+    summary: composeExtractiveAnswer(passages),
+    knowledge: passages,
+  };
+}
+
 /** Executes a structured filter against the FIR database (PRD A1). */
 export function executeQuery(db: Database, filter: QueryFilter): QueryResult {
   switch (filter.intent) {
@@ -413,6 +437,8 @@ export function executeQuery(db: Database, filter: QueryFilter): QueryResult {
       return executeActSection(db, filter);
     case 'hotspotQuery':
       return executeHotspotQuery(db, filter);
+    case 'legalQuestion':
+      return executeLegalQuestion(db, filter);
     default:
       break;
   }

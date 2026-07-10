@@ -9,7 +9,8 @@ export type QueryIntent =
   | 'financialSummary'
   | 'actSection'
   | 'hotspotQuery'
-  | 'investigate';
+  | 'investigate'
+  | 'legalQuestion';
 
 export interface QueryFilter {
   intent: QueryIntent;
@@ -27,6 +28,8 @@ export interface QueryFilter {
   sectionCode?: string;
   /** Free-text modus operandi search ("lock-picking cases"). */
   moKeyword?: string;
+  /** legalQuestion: the question text for knowledge-base retrieval (A6). */
+  kbQuery?: string;
 }
 
 export interface ParsedQuery {

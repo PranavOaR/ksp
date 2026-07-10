@@ -28,7 +28,7 @@ const ParseSchema = z.object({
   intent: z.enum([
     'listFirs', 'listOffenders', 'count', 'trend',
     'personProfile', 'caseDetail', 'networkQuery', 'financialSummary',
-    'actSection', 'hotspotQuery', 'investigate',
+    'actSection', 'hotspotQuery', 'investigate', 'legalQuestion',
   ]),
   crimeType: z.enum(CRIME_TYPES).nullable(),
   district: z.enum(DISTRICTS).nullable(),
@@ -52,6 +52,10 @@ const ParseSchema = z.object({
     .string()
     .nullable()
     .describe('Modus operandi phrase the user is searching for, or null'),
+  kbQuery: z
+    .string()
+    .nullable()
+    .describe('For legalQuestion only: the legal question restated in English for retrieval'),
   isRefinement: z
     .boolean()
     .describe('true when the message refines the previous query instead of starting a new one'),
@@ -76,7 +80,8 @@ Rules:
   - "networkQuery" for associates/connections/network questions about a person ("who is linked to Salim Khan") — also set personName.
   - "personProfile" for who-is/priors/history questions about a person — also set personName.
   - "caseDetail" when a specific case number is mentioned — also set firNumber.
-  - "actSection" for legal-section questions ("cases under BNS 303", "IPC 302 cases" → actCode BNS, sectionCode 303/103) — also set actCode + sectionCode.
+  - "actSection" for listing CASES charged under a specific section ("cases under BNS 303", "IPC 302 cases" → actCode BNS, sectionCode 303/103) — also set actCode + sectionCode.
+  - "legalQuestion" for questions about the LAW or PROCEDURE itself ("what section applies to chain snatching?", "punishment for OTP fraud", "procedure for NDPS seizure", "ಸರಪಳಿ ಕಳ್ಳತನಕ್ಕೆ ಯಾವ ಸೆಕ್ಷನ್?") — set kbQuery to the question restated in English.
   - "financialSummary" for money-trail / suspicious-transaction / laundering questions.
   - "hotspotQuery" for hotspot / crime-density / where-is-crime-concentrated questions.
   - "listOffenders" for repeat/habitual offender questions, "count" for how-many questions, "trend" for trend/forecast questions, otherwise "listFirs".
@@ -155,6 +160,40 @@ export async function llmComposeAnswer(input: {
   const textBlock = response.content.find((block) => block.type === 'text');
   if (!textBlock || !('text' in textBlock) || !textBlock.text.trim()) {
     throw new Error('LLM compose returned no text');
+  }
+  return textBlock.text.trim();
+}
+
+/**
+ * Knowledge-base answer composition (Module A6): answers a legal/procedure
+ * question grounded STRICTLY on the retrieved passages, with citations.
+ */
+export async function llmComposeLegal(input: {
+  question: string;
+  passages: Array<{ source: string; title: string; content: string }>;
+  language: CopilotLanguage;
+}): Promise<string> {
+  const client = getClient();
+  const languageRule =
+    input.language === 'kn'
+      ? 'Answer in natural Kannada (ಕನ್ನಡ), keeping act names and section numbers in English/Latin script.'
+      : 'Answer in clear, plain English.';
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: COMPOSE_MAX_TOKENS,
+    system: `You are DRISHTI's legal knowledge assistant for Karnataka State Police investigators. Answer using ONLY the retrieved legal provisions provided — if they do not cover the question, say so plainly. Cite every provision you rely on by its title (e.g. "BNS §304"). 2-4 sentences, factual, no legal advice disclaimer. PLAIN TEXT ONLY — no markdown of any kind (no **, no #, no bullets). ${languageRule}`,
+    messages: [
+      {
+        role: 'user',
+        content: `Question: ${input.question}\n\nRetrieved provisions (ground truth): ${JSON.stringify(input.passages)}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === 'text');
+  if (!textBlock || !('text' in textBlock) || !textBlock.text.trim()) {
+    throw new Error('LLM legal compose returned no text');
   }
   return textBlock.text.trim();
 }

@@ -5,7 +5,13 @@ import { getDb } from '@/lib/db/client';
 import { createRateLimiter } from '@/lib/rateLimit';
 import { workspaceFromRequest } from '@/lib/workspace';
 import { composeMemoFallback, runInvestigation, type AgentStep } from '@/lib/intel/agent';
-import { isLlmEnabled, llmComposeAnswer, llmComposeMemo, llmParseQuery } from '@/lib/intel/llm';
+import {
+  isLlmEnabled,
+  llmComposeAnswer,
+  llmComposeLegal,
+  llmComposeMemo,
+  llmParseQuery,
+} from '@/lib/intel/llm';
 import type { CopilotLanguage } from '@/lib/intel/llmCoerce';
 import { parseQuery } from '@/lib/intel/queryParser';
 import { executeQuery } from '@/lib/intel/queryExecutor';
@@ -171,7 +177,21 @@ export async function POST(request: Request) {
     const wantsKannada = language === 'kn' || body.answerLanguage === 'kn';
     let answerLanguage: CopilotLanguage = 'en';
     let answer = result.summary;
-    if (engine === 'claude' && wantsKannada) {
+
+    // A6: knowledge-base answers get a Claude composition grounded on the
+    // retrieved passages; the extractive summary is the offline fallback.
+    if (result.kind === 'knowledge' && result.knowledge && result.knowledge.length > 0 && engine === 'claude') {
+      try {
+        answer = await llmComposeLegal({
+          question: body.message,
+          passages: result.knowledge,
+          language: wantsKannada ? 'kn' : 'en',
+        });
+        answerLanguage = wantsKannada ? 'kn' : 'en';
+      } catch (error) {
+        console.error('[drishti-llm] legal compose failed, using extractive answer:', error);
+      }
+    } else if (engine === 'claude' && wantsKannada) {
       try {
         answer = await llmComposeAnswer({
           question: body.message,
@@ -206,6 +226,7 @@ export async function POST(request: Request) {
       ...(result.hotspots ? { hotspots: result.hotspots } : {}),
       ...(result.candidates ? { candidates: result.candidates } : {}),
       ...(result.caseIntel ? { caseId: result.caseIntel.fir.id } : {}),
+      ...(result.knowledge ? { knowledge: result.knowledge } : {}),
     };
   });
 }

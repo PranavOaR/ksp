@@ -256,6 +256,17 @@ interface IntentSignals {
 
 function detectIntent(text: string, signals: IntentSignals, matched: string[]): QueryIntent {
   if (
+    text.includes('what section') || text.includes('which section') ||
+    text.includes('section applies') || text.includes('punishment for') ||
+    text.includes('penalty for') || text.includes('what act') ||
+    text.includes('which act') || text.includes('provision') ||
+    text.includes('procedure for') || text.includes('sop for') ||
+    text.includes('how to register') || text.includes('chain of custody')
+  ) {
+    matched.push('Intent: legal knowledge-base question');
+    return 'legalQuestion';
+  }
+  if (
     signals.personName &&
     (text.includes('investigate') || text.includes('brief on') || text.includes('full workup'))
   ) {
@@ -355,6 +366,7 @@ export function parseQuery(rawText: string, previous?: QueryFilter): ParsedQuery
     ...(actCode ? { actCode } : {}),
     ...(sectionCode ? { sectionCode } : {}),
     ...(moKeyword ? { moKeyword } : {}),
+    ...(intent === 'legalQuestion' ? { kbQuery: rawText } : {}),
   };
 
   const signalCount = [

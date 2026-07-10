@@ -207,6 +207,22 @@ export const SECTIONS: readonly SectionDef[] = [
   { actCode: 'ARMS', sectionCode: '25', description: 'Punishment for illegal manufacture, sale, possession of arms — whoever manufactures, sells, transfers, or has in his possession any arms or ammunition in contravention of the Act shall be punishable with imprisonment of not less than seven years which may extend to life, and fine.' },
 ];
 
+/**
+ * Procedural SOP passages for the knowledge base (Module A6) — condensed
+ * from BNSS 2023 and standing-order practice; Track B task B1 expands and
+ * sources these alongside the section texts.
+ */
+export const SOP_SNIPPETS: ReadonlyArray<{ title: string; content: string }> = [
+  { title: 'SOP — FIR registration', content: 'On receipt of information about a cognizable offence, the officer in charge shall register an FIR under BNSS Section 173 without preliminary verification for cognizable offences; a copy of the FIR shall be given to the informant free of cost, and refusal to register may be escalated to the Superintendent of Police.' },
+  { title: 'SOP — Zero FIR', content: 'When information about a cognizable offence is received at a police station outside whose jurisdiction the offence occurred, a Zero FIR shall be registered and transferred to the jurisdictional police station; jurisdiction is never a ground to refuse registration.' },
+  { title: 'SOP — Arrest procedure', content: 'Arrest must follow BNSS Chapter V: the officer shall inform the arrested person of grounds of arrest, prepare an arrest memo attested by a witness, notify a nominated relative, and produce the person before the magistrate within 24 hours excluding journey time.' },
+  { title: 'SOP — Chargesheet timeline', content: 'The final report (chargesheet) under BNSS Section 193 shall be filed within 60 days of arrest for offences punishable up to 10 years and within 90 days for graver offences; failure entitles the accused to default bail.' },
+  { title: 'SOP — Cybercrime first response', content: 'For cybercrime complaints: preserve digital evidence first — do not switch off the device; record hash values before imaging; direct the complainant to the National Cybercrime Reporting Portal (1930 helpline for financial fraud) and freeze mule accounts through the nodal officer within the golden hour.' },
+  { title: 'SOP — NDPS seizure', content: 'Narcotics seizures must comply with NDPS Section 52A: inventory the contraband before a magistrate, draw representative samples in duplicate, and dispatch samples to the forensic laboratory within 72 hours; non-compliance jeopardises the prosecution.' },
+  { title: 'SOP — Evidence chain of custody', content: 'Every physical or digital exhibit shall carry a chain-of-custody record: seizure memo with two witnesses, unique exhibit number, sealed packaging with signature of the seizing officer, and movement log entries for every transfer until court production.' },
+  { title: 'SOP — Victim compensation', content: 'Victims of violent crime may be referred to the Karnataka Victim Compensation Scheme; the investigating officer shall inform eligible victims in writing and forward the recommendation through the District Legal Services Authority.' },
+];
+
 /** Sub-head → applicable act/sections; drives ActSectionAssociation seeding. */
 export const CRIME_HEAD_ACT_SECTIONS: ReadonlyArray<{
   crimeSubHead: CrimeType;

@@ -1,6 +1,6 @@
 import DatabaseConstructor, { type Database } from 'better-sqlite3';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { applyMigrations, SCHEMA_SQL } from '@/lib/db/schema';
+import { applyMigrations, MIGRATIONS, SCHEMA_SQL } from '@/lib/db/schema';
 import { ensureV2Data, resetDemoData, seedDatabase, seedStationsOnly } from '@/lib/db/seed';
 import { CaseInputSchema, createCaseFile } from '@/lib/intel/createCase';
 
@@ -35,8 +35,8 @@ describe('schema v2 — official ER alignment', () => {
     applyMigrations(db);
 
     // Assert
-    expect(before).toBe(1);
-    expect(db.pragma('user_version', { simple: true })).toBe(1);
+    expect(before).toBe(MIGRATIONS.length);
+    expect(db.pragma('user_version', { simple: true })).toBe(MIGRATIONS.length);
   });
 
   test('every seeded FIR gets an 18-digit official CrimeNo with unique values', () => {

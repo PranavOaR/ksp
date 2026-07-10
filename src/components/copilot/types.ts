@@ -9,6 +9,7 @@ import type {
 } from '@/lib/intel/types';
 import type { AgentStep } from '@/lib/intel/agent';
 import type { Hotspot } from '@/lib/intel/hotspots';
+import type { KnowledgePassage } from '@/lib/intel/knowledge';
 
 export interface AgentPayload {
   target: { personId: number; name: string };
@@ -30,7 +31,8 @@ export interface ChatResponse {
     | 'hotspots'
     | 'candidates'
     | 'noMatch'
-    | 'agent';
+    | 'agent'
+    | 'knowledge';
   firs: FirRecord[];
   offenders: OffenderProfile[];
   totalCount: number;
@@ -51,6 +53,8 @@ export interface ChatResponse {
   caseId?: number;
   /** investigate: the agent's step trace + drafted lead memo (Module A′). */
   agent?: AgentPayload;
+  /** legalQuestion: retrieved knowledge-base passages with citations (A6). */
+  knowledge?: KnowledgePassage[];
 }
 
 export interface ChatTurn {

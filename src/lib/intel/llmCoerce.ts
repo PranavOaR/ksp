@@ -15,6 +15,7 @@ export interface LlmParseOutput {
   actCode?: string | null;
   sectionCode?: string | null;
   moKeyword?: string | null;
+  kbQuery?: string | null;
   isRefinement: boolean;
   language: string;
   understood: string[];
@@ -23,7 +24,7 @@ export interface LlmParseOutput {
 const INTENTS: readonly QueryIntent[] = [
   'listFirs', 'listOffenders', 'count', 'trend',
   'personProfile', 'caseDetail', 'networkQuery', 'financialSummary',
-  'actSection', 'hotspotQuery', 'investigate',
+  'actSection', 'hotspotQuery', 'investigate', 'legalQuestion',
 ];
 const ACT_CODES = ['BNS', 'ITACT', 'NDPS', 'ARMS'] as const;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -88,6 +89,9 @@ export function coerceLlmParse(
   const actCode =
     keepIfValid(raw.actCode ?? null, ACT_CODES) ?? (sectionCode ? 'BNS' : undefined);
   const moKeyword = keepIfMoKeyword(raw.moKeyword);
+  const kbQuery = raw.kbQuery && raw.kbQuery.trim().length >= 3
+    ? raw.kbQuery.trim().slice(0, 300)
+    : undefined;
 
   // Person/case/section intents are meaningless without their subject —
   // if the model named an intent but the subject failed validation, fall
@@ -98,6 +102,7 @@ export function coerceLlmParse(
     investigate: personName,
     caseDetail: firNumber,
     actSection: sectionCode,
+    legalQuestion: kbQuery,
   };
   const requiredSubject = subjectByIntent[intent];
   const safeIntent: QueryIntent =
@@ -116,6 +121,7 @@ export function coerceLlmParse(
     ...(actCode ? { actCode } : {}),
     ...(sectionCode ? { sectionCode } : {}),
     ...(moKeyword ? { moKeyword } : {}),
+    ...(kbQuery ? { kbQuery } : {}),
   };
 
   const signalCount = [
