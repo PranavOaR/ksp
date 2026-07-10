@@ -9,7 +9,13 @@ import type { FirRecord, OffenderProfile, ParsedQuery, QueryFilter } from './typ
 const MODEL = 'claude-haiku-4-5';
 const PARSE_MAX_TOKENS = 1024;
 const COMPOSE_MAX_TOKENS = 1024;
-const REQUEST_TIMEOUT_MS = 20_000;
+/**
+ * Catalyst AppSail caps requests at 30s. A chat turn can make two LLM
+ * calls (parse + compose), so each gets a tight 8s budget with no SDK
+ * retries — the deterministic rule engine / extractive fallbacks make a
+ * fast timeout strictly better than a slow success here.
+ */
+const REQUEST_TIMEOUT_MS = 8_000;
 
 let cachedClient: Anthropic | null = null;
 
@@ -19,7 +25,7 @@ export function isLlmEnabled(): boolean {
 
 function getClient(): Anthropic {
   if (!cachedClient) {
-    cachedClient = new Anthropic({ timeout: REQUEST_TIMEOUT_MS, maxRetries: 1 });
+    cachedClient = new Anthropic({ timeout: REQUEST_TIMEOUT_MS, maxRetries: 0 });
   }
   return cachedClient;
 }

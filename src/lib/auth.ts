@@ -64,8 +64,13 @@ export interface SessionUser {
 export { ROLE_ACCESS, canAccess } from './authShared';
 
 function getSecret(): string {
-  // Demo fallback keeps the prototype runnable without configuration
-  return process.env.AUTH_SECRET ?? 'drishti-demo-secret-rotate-in-production';
+  if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  // Demo fallback keeps local development runnable without configuration —
+  // production deployments must set AUTH_SECRET (fail fast, no weak cookies)
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('AUTH_SECRET must be set in production');
+  }
+  return 'drishti-demo-secret-rotate-in-production';
 }
 
 function base64UrlEncode(value: string): string {
