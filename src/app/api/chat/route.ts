@@ -15,6 +15,7 @@ import {
 import type { CopilotLanguage } from '@/lib/intel/llmCoerce';
 import { parseQuery } from '@/lib/intel/queryParser';
 import { executeQuery } from '@/lib/intel/queryExecutor';
+import { applyJurisdiction } from '@/lib/scope';
 import type { ParsedQuery, QueryFilter } from '@/lib/intel/types';
 
 interface ChatRequestBody {
@@ -171,7 +172,12 @@ export async function POST(request: Request) {
       };
     }
 
-    const result = executeQuery(db, parsed.filter);
+    // J1: district-posted officers get answers scoped to their jurisdiction,
+    // with the scoping surfaced in the reasoning trail (explainable RBAC).
+    const { filter: scopedFilter, scopeNote } = applyJurisdiction(parsed.filter, session);
+    const reasoningTrail = scopeNote ? [...parsed.matched, scopeNote] : parsed.matched;
+
+    const result = executeQuery(db, scopedFilter);
     logAudit(db, role, 'chat_query', `[${engine}/${language}] ${body.message}`);
 
     const wantsKannada = language === 'kn' || body.answerLanguage === 'kn';
@@ -214,10 +220,10 @@ export async function POST(request: Request) {
       offenders: result.offenders,
       totalCount: result.totalCount,
       evidence: result.evidence.slice(0, 10),
-      reasoningTrail: parsed.matched,
+      reasoningTrail,
       confidence: parsed.confidence,
       isRefinement: parsed.isRefinement,
-      filter: parsed.filter,
+      filter: scopedFilter,
       engine,
       language: answerLanguage,
       ...(result.network ? { network: result.network } : {}),

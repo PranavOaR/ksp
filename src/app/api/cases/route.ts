@@ -42,16 +42,23 @@ export async function GET(request: Request) {
     const db = getDb(workspaceFromRequest(request));
     logAudit(db, roleFromRequest(request), 'list_cases', `page ${page}`);
 
-    const { total } = db.prepare('SELECT COUNT(*) AS total FROM firs').get() as { total: number };
+    // J1: district-posted officers see their jurisdiction's case list
+    const jurisdiction = sessionFromRequest(request)?.jurisdictionDistrict ?? null;
+    const where = jurisdiction ? 'WHERE f.district = ?' : '';
+    const params: unknown[] = jurisdiction ? [jurisdiction] : [];
+
+    const { total } = db
+      .prepare(`SELECT COUNT(*) AS total FROM firs f ${where}`)
+      .get(...params) as { total: number };
     const cases = db
       .prepare(
         `SELECT f.id, f.fir_number, f.crime_type, f.district, s.name AS station_name,
                 f.occurred_at, f.status
          FROM firs f JOIN stations s ON s.id = f.station_id
-         ORDER BY f.occurred_at DESC LIMIT ? OFFSET ?`
+         ${where} ORDER BY f.occurred_at DESC LIMIT ? OFFSET ?`
       )
-      .all(PAGE_SIZE, (page - 1) * PAGE_SIZE);
+      .all(...params, PAGE_SIZE, (page - 1) * PAGE_SIZE);
 
-    return { cases, meta: { total, page, limit: PAGE_SIZE } };
+    return { cases, meta: { total, page, limit: PAGE_SIZE, jurisdiction } };
   });
 }

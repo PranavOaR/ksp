@@ -4,20 +4,49 @@ import type { UserRole } from './constants';
 export const SESSION_COOKIE = 'drishti_session';
 const SESSION_TTL_SECONDS = 12 * 60 * 60; // one shift
 
-/** Demo credential store for the prototype — replace with KSP identity provider in production. */
+/**
+ * Demo credential store for the prototype — replace with KSP identity
+ * provider in production. Ranks/units mirror the official Rank/Unit
+ * hierarchy seeded from the ER schema (Module J1): rankHierarchy is the
+ * official "lower = higher authority" level, jurisdictionDistrict scopes
+ * data access (null = statewide).
+ */
 export interface DemoUser {
   username: string;
   password: string;
   name: string;
   rank: string;
   role: UserRole;
+  unitName: string;
+  rankHierarchy: number;
+  jurisdictionDistrict: string | null;
 }
 
 export const DEMO_USERS: DemoUser[] = [
-  { username: 'investigator', password: 'drishti123', name: 'Ravi Kumar', rank: 'Inspector', role: 'Investigator' },
-  { username: 'analyst', password: 'drishti123', name: 'Deepa Rao', rank: 'Crime Analyst', role: 'Analyst' },
-  { username: 'supervisor', password: 'drishti123', name: 'Harish Gowda', rank: 'DySP', role: 'Supervisor' },
-  { username: 'admin', password: 'drishti123', name: 'Anitha Shetty', rank: 'SP', role: 'Administrator' },
+  {
+    username: 'investigator', password: 'drishti123', name: 'Ravi Kumar',
+    rank: 'Police Sub-Inspector', role: 'Investigator',
+    unitName: 'Bengaluru City East PS', rankHierarchy: 9,
+    jurisdictionDistrict: 'Bengaluru City',
+  },
+  {
+    username: 'analyst', password: 'drishti123', name: 'Deepa Rao',
+    rank: 'Police Inspector', role: 'Analyst',
+    unitName: 'State Crime Records Bureau', rankHierarchy: 8,
+    jurisdictionDistrict: null,
+  },
+  {
+    username: 'supervisor', password: 'drishti123', name: 'Harish Gowda',
+    rank: 'Superintendent of Police', role: 'Supervisor',
+    unitName: 'Bengaluru City District Police Office', rankHierarchy: 5,
+    jurisdictionDistrict: 'Bengaluru City',
+  },
+  {
+    username: 'admin', password: 'drishti123', name: 'Anitha Shetty',
+    rank: 'Director General of Police', role: 'Administrator',
+    unitName: 'Karnataka State Police HQ', rankHierarchy: 1,
+    jurisdictionDistrict: null,
+  },
 ];
 
 export interface SessionUser {
@@ -25,6 +54,10 @@ export interface SessionUser {
   name: string;
   rank: string;
   role: UserRole;
+  unitName: string;
+  rankHierarchy: number;
+  /** District the user's answers are scoped to; null = statewide. */
+  jurisdictionDistrict: string | null;
   exp: number;
 }
 
@@ -61,6 +94,9 @@ export function createSessionToken(user: DemoUser, nowSeconds = Math.floor(Date.
     name: user.name,
     rank: user.rank,
     role: user.role,
+    unitName: user.unitName,
+    rankHierarchy: user.rankHierarchy,
+    jurisdictionDistrict: user.jurisdictionDistrict,
     exp: nowSeconds + SESSION_TTL_SECONDS,
   };
   const payload = base64UrlEncode(JSON.stringify(session));
@@ -88,6 +124,8 @@ export function verifySessionToken(
   try {
     const session = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as SessionUser;
     if (typeof session.exp !== 'number' || session.exp < nowSeconds) return null;
+    // Tokens minted before the rank/unit hierarchy fields force a re-login
+    if (typeof session.rankHierarchy !== 'number') return null;
     return session;
   } catch {
     return null;
