@@ -33,7 +33,9 @@ describe('session tokens', () => {
 
     expect(session?.username).toBe('investigator');
     expect(session?.role).toBe('Investigator');
-    expect(session?.rank).toBe('Inspector');
+    expect(session?.rank).toBe('Police Sub-Inspector');
+    expect(session?.jurisdictionDistrict).toBe('Bengaluru City');
+    expect(session?.rankHierarchy).toBe(9);
   });
 
   test('rejects tampered payloads', () => {

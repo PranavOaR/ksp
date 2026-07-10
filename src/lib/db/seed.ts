@@ -7,6 +7,8 @@ import {
   MODUS_OPERANDI,
 } from '../constants';
 import { createRng, type Rng } from '../random';
+import { applyMigrations } from './schema';
+import { hasV2Schema, seedV2, V2_TABLES_WIPE_ORDER } from './seedV2';
 
 const SEED = 20260706;
 const PERSON_COUNT = 220;
@@ -251,9 +253,25 @@ export function seedStationsOnly(db: Database): void {
   }
 }
 
+/**
+ * Layers the official-schema (v2) data on top of whatever cases exist.
+ * Idempotent; safe to call on every boot. Uses a SECOND rng stream
+ * (SEED + 1) so the v1 mulberry32 sequence — and therefore all 480 seeded
+ * FIRs — stays byte-identical.
+ */
+export function ensureV2Data(db: Database, options: { synthesizeDetails: boolean }): void {
+  if (!hasV2Schema(db)) return;
+  seedV2(db, createRng(SEED + 1), options);
+}
+
 /** Clears every table and reseeds the full synthetic dataset (demo reset). */
 export function resetDemoData(db: Database): void {
   const wipe = db.transaction(() => {
+    if (hasV2Schema(db)) {
+      for (const table of V2_TABLES_WIPE_ORDER) {
+        db.prepare(`DELETE FROM ${table}`).run();
+      }
+    }
     for (const table of [
       'transactions', 'fir_assets', 'fir_accused', 'fir_victims',
       'assets', 'firs', 'persons', 'stations', 'audit_log',
@@ -279,4 +297,7 @@ export function seedDatabase(db: Database): void {
     seedTransactions(db, rng, assetsByPerson);
   });
   seedAll();
+  // Tests build in-memory DBs from SCHEMA_SQL alone, so self-migrate here.
+  applyMigrations(db);
+  ensureV2Data(db, { synthesizeDetails: true });
 }

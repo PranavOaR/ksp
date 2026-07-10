@@ -1,4 +1,16 @@
-export type QueryIntent = 'listFirs' | 'listOffenders' | 'count' | 'trend';
+export type QueryIntent =
+  | 'listFirs'
+  | 'listOffenders'
+  | 'count'
+  | 'trend'
+  | 'personProfile'
+  | 'caseDetail'
+  | 'networkQuery'
+  | 'financialSummary'
+  | 'actSection'
+  | 'hotspotQuery'
+  | 'investigate'
+  | 'legalQuestion';
 
 export interface QueryFilter {
   intent: QueryIntent;
@@ -7,6 +19,17 @@ export interface QueryFilter {
   status?: string;
   fromDate?: string;
   toDate?: string;
+  /** Person the question is about ("who is Ravi Kumar", "investigate …"). */
+  personName?: string;
+  /** A specific case — legacy FIR/2026/BEN/0001 or 18-digit official CrimeNo. */
+  firNumber?: string;
+  /** Legal classification ("cases under BNS 303"). */
+  actCode?: string;
+  sectionCode?: string;
+  /** Free-text modus operandi search ("lock-picking cases"). */
+  moKeyword?: string;
+  /** legalQuestion: the question text for knowledge-base retrieval (A6). */
+  kbQuery?: string;
 }
 
 export interface ParsedQuery {
@@ -62,4 +85,38 @@ export interface GraphEdge {
 export interface NetworkGraph {
   nodes: GraphNode[];
   edges: GraphEdge[];
+}
+
+/** A possible identity match when a name in a question is ambiguous. */
+export interface PersonCandidate {
+  personId: number;
+  name: string;
+  district: string;
+  caseCount: number;
+}
+
+/** Copilot-sized digest of a network expansion (full graph lives at /network). */
+export interface NetworkSummaryData {
+  personId: number;
+  personName: string;
+  hops: number;
+  nodeCount: number;
+  edgeCount: number;
+  topAssociates: Array<{ personId: number; name: string; sharedCases: number }>;
+}
+
+/** Copilot-sized digest of the money-trail analysis (full view at /financial). */
+export interface FinancialSummaryData {
+  ringCount: number;
+  flaggedVolume: number;
+  accountCount: number;
+  transferCount: number;
+  topTransfers: Array<{ from: string; fromOwner: string; to: string; toOwner: string; amount: number }>;
+}
+
+export interface ActSectionInfo {
+  actCode: string;
+  actName: string;
+  sectionCode: string;
+  sectionDescription: string;
 }

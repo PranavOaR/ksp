@@ -37,6 +37,16 @@ export function TopBar() {
           <span className="ml-3 rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-deep)]">
             {t(`role.${user.role}`)}
           </span>
+          <span
+            className="ml-2 hidden rounded-full border border-[var(--border-1)] px-2.5 py-0.5 text-[11px] text-[var(--text-muted)] lg:inline"
+            title={
+              user.jurisdictionDistrict
+                ? `Data access scoped to ${user.jurisdictionDistrict}`
+                : 'Statewide data access'
+            }
+          >
+            {user.unitName} · {user.jurisdictionDistrict ?? t('chrome.statewide')}
+          </span>
         </div>
         <div className="flex items-center gap-2">
         <WorkspaceSwitch />
