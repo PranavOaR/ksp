@@ -1,4 +1,4 @@
-# DRISHTI — KSP Crime Intelligence Copilot
+# DRISHTI — KSP Crime Intelligence Copilot 
 
 > ದೃಷ್ಟಿ (*Drishti*, "vision") — **D**ata-driven **R**apid **I**nvestigation & **S**trategic **H**olistic **T**hreat **I**ntelligence
 
