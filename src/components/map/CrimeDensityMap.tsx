@@ -24,7 +24,7 @@ const MAP_ZOOM = 7;
 /** ~2km bins keep the density readable at state zoom. */
 const GRID_BIN_DEGREES = 0.02;
 /** Dark CARTO raster matches the app theme; attribution required. */
-const TILE_URL = 'https://{s}.basemap.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
