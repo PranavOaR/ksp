@@ -1,4 +1,5 @@
-import { roleFromRequest, withErrorHandling } from '@/lib/api';
+import { fail, withErrorHandling } from '@/lib/api';
+import { sessionFromRequest } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
 import { workspaceFromRequest } from '@/lib/workspace';
@@ -26,9 +27,11 @@ function deriveQuarterWindows(maxDate: string): { recentStart: string; previousS
 }
 
 export async function GET(request: Request) {
+  const session = sessionFromRequest(request);
+  if (!session) return fail('Sign in required.', 401);
   return withErrorHandling(() => {
     const db = getDb(workspaceFromRequest(request));
-    logAudit(db, roleFromRequest(request), 'view_analytics', 'analytics dashboard');
+    logAudit(db, session.role, 'view_analytics', 'analytics dashboard');
 
     // A1: derive quarter windows from actual data, not hard-coded dates
     const { maxDate } = db

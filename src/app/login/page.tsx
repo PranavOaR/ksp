@@ -12,7 +12,11 @@ const DEMO_ACCOUNTS = [
   { username: 'admin', label: 'Administrator', detail: 'SP Anitha Shetty' },
 ];
 
-const DEMO_PASSWORD = 'drishti123';
+// One-click sign-in only exists in local dev builds; the deployed site's
+// password comes from the DEMO_PASSWORD env var and is never shipped to
+// the client — quick buttons there just prefill the username.
+const DEV_ONE_CLICK_PASSWORD =
+  process.env.NODE_ENV === 'production' ? null : 'drishti123';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +29,7 @@ export default function LoginPage() {
   const submit = async (event?: React.FormEvent, overrideUser?: string) => {
     event?.preventDefault();
     const user = overrideUser ?? username;
-    const pass = overrideUser ? DEMO_PASSWORD : password;
+    const pass = overrideUser ? DEV_ONE_CLICK_PASSWORD : password;
     if (!user || !pass) return;
     setIsBusy(true);
     setError(null);
@@ -95,7 +99,8 @@ export default function LoginPage() {
 
           <div className="mt-6 border-t border-dashed border-[var(--border-1)] pt-5">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {t('login.demoLabel')} {DEMO_PASSWORD}
+              {t('login.demoLabel')}
+              {DEV_ONE_CLICK_PASSWORD ? ` ${DEV_ONE_CLICK_PASSWORD}` : ''}
             </p>
             <div className="grid grid-cols-2 gap-2">
               {DEMO_ACCOUNTS.map((account) => (
@@ -103,7 +108,11 @@ export default function LoginPage() {
                   key={account.username}
                   type="button"
                   disabled={isBusy}
-                  onClick={() => void submit(undefined, account.username)}
+                  onClick={() =>
+                    DEV_ONE_CLICK_PASSWORD
+                      ? void submit(undefined, account.username)
+                      : setUsername(account.username)
+                  }
                   className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-2)]/60 px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]"
                 >
                   <span className="block text-xs font-bold text-[var(--text-primary)]">

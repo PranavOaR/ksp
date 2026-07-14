@@ -1,4 +1,5 @@
-import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
+import { fail, withErrorHandling } from '@/lib/api';
+import { sessionFromRequest } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
 import { workspaceFromRequest } from '@/lib/workspace';
@@ -9,6 +10,8 @@ import { getCoAccusedPairs } from '@/lib/intel/offenders';
 const MAX_HOPS = 3;
 
 export async function GET(request: Request) {
+  const session = sessionFromRequest(request);
+  if (!session) return fail('Sign in required.', 401);
   const url = new URL(request.url);
   const personIdParam = url.searchParams.get('personId');
   const hopsParam = url.searchParams.get('hops') ?? '2';
@@ -20,7 +23,7 @@ export async function GET(request: Request) {
 
   return withErrorHandling(() => {
     const db = getDb(workspaceFromRequest(request));
-    const role = roleFromRequest(request);
+    const role = session.role;
 
     if (personIdParam) {
       const personId = Number(personIdParam);

@@ -1,4 +1,5 @@
-import { roleFromRequest, withErrorHandling } from '@/lib/api';
+import { fail, withErrorHandling } from '@/lib/api';
+import { sessionFromRequest } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { getDb } from '@/lib/db/client';
 import { workspaceFromRequest } from '@/lib/workspace';
@@ -32,9 +33,11 @@ const FORECAST_HORIZON_MONTHS = 3;
  * forecast for the predictive overlay the judges asked for.
  */
 export async function GET(request: Request) {
+  const session = sessionFromRequest(request);
+  if (!session) return fail('Sign in required.', 401);
   return withErrorHandling(() => {
     const db = getDb(workspaceFromRequest(request));
-    logAudit(db, roleFromRequest(request), 'view_map', 'crime density map');
+    logAudit(db, session.role, 'view_map', 'crime density map');
 
     const points = db
       .prepare('SELECT lat, lon, crime_type AS crimeType, district FROM firs')

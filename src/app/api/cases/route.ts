@@ -1,4 +1,4 @@
-import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
+import { fail, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
 import { sessionFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
@@ -34,16 +34,18 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const session = sessionFromRequest(request);
+  if (!session) return fail('Sign in required.', 401);
   const url = new URL(request.url);
   const pageParam = Number(url.searchParams.get('page') ?? '1');
   const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
 
   return withErrorHandling(() => {
     const db = getDb(workspaceFromRequest(request));
-    logAudit(db, roleFromRequest(request), 'list_cases', `page ${page}`);
+    logAudit(db, session.role, 'list_cases', `page ${page}`);
 
     // J1: district-posted officers see their jurisdiction's case list
-    const jurisdiction = sessionFromRequest(request)?.jurisdictionDistrict ?? null;
+    const jurisdiction = session.jurisdictionDistrict;
     const where = jurisdiction ? 'WHERE f.district = ?' : '';
     const params: unknown[] = jurisdiction ? [jurisdiction] : [];
 

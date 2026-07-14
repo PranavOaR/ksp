@@ -13,6 +13,11 @@ export async function POST(request: Request) {
     }
   }
   const response = NextResponse.json({ success: true, data: { loggedOut: true }, error: null });
-  response.cookies.set(SESSION_COOKIE, '', { httpOnly: true, path: '/', maxAge: 0 });
+  response.cookies.set(SESSION_COOKIE, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 0,
+  });
   return response;
 }
