@@ -8,7 +8,7 @@ import { createRateLimiter } from '@/lib/rateLimit';
 const LOGIN_ATTEMPT_LIMIT = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
-/** Brute-force guard: attempts are keyed per username + caller IP. */
+/** Brute-force guard: only FAILED attempts count, keyed per username + IP. */
 const loginLimiter = createRateLimiter({ limit: LOGIN_ATTEMPT_LIMIT, windowMs: LOGIN_WINDOW_MS });
 
 function callerIp(request: Request): string {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   const limiterKey = `${body.username.toLowerCase().trim()}|${callerIp(request)}`;
-  const decision = loginLimiter(limiterKey);
+  const decision = loginLimiter.peek(limiterKey);
   if (!decision.allowed) {
     return fail(
       `Too many sign-in attempts. Try again in ${Math.ceil(decision.retryAfterSeconds / 60)} minute(s).`,
@@ -42,6 +42,9 @@ export async function POST(request: Request) {
     return fail('Sign-in is not available on this deployment.', 503);
   }
   if (!user) {
+    // Only failures consume the rate-limit window — legitimate users signing
+    // in and out repeatedly (demo sessions) must never lock themselves out
+    loginLimiter(limiterKey);
     // Deliberately vague message — do not reveal which field was wrong
     return fail('Invalid credentials.', 401);
   }

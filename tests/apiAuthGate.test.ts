@@ -107,6 +107,26 @@ describe('login hardening', () => {
     expect(statuses[5]).toBe(429);
   });
 
+  test('successful logins are never counted against the rate limit', async () => {
+    const attempt = (password: string) =>
+      postLogin(
+        new Request('http://test.local/api/auth/login', {
+          method: 'POST',
+          headers: { 'x-forwarded-for': '203.0.113.20' },
+          body: JSON.stringify({ username: 'investigator', password }),
+        })
+      );
+
+    // 4 failures leave one attempt in the window; a correct password must
+    // still work, repeatedly — demo judges sign in and out many times.
+    for (let index = 0; index < 4; index += 1) {
+      expect((await attempt('wrong')).status).toBe(401);
+    }
+    for (let index = 0; index < 8; index += 1) {
+      expect((await attempt('drishti123')).status).toBe(200);
+    }
+  });
+
   test('session cookie is Secure in production', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('AUTH_SECRET', 'test-secret');
