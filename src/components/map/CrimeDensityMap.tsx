@@ -1,8 +1,10 @@
 'use client';
 
 import 'leaflet/dist/leaflet.css';
-import { useMemo, useState } from 'react';
-import { Circle, CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { useMemo, useRef, useState } from 'react';
+import type { Map as LeafletMap } from 'leaflet';
+import { Circle, CircleMarker, MapContainer, Polygon, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { karnatakaGeoRing } from '@/components/landing/karnatakaPath';
 import type { Hotspot } from '@/lib/intel/hotspots';
 import type { DistrictForecast, MapPoint } from '@/app/api/map/route';
 
@@ -21,12 +23,30 @@ export interface LayerToggles {
 /** Karnataka framing. */
 const MAP_CENTER: [number, number] = [14.6, 76.2];
 const MAP_ZOOM = 7;
+/** Camera stays inside Karnataka: bbox with a small margin, no country-level zoom-out. */
+const MAP_BOUNDS: [[number, number], [number, number]] = [
+  [11.3, 73.8],
+  [18.7, 78.9],
+];
+const MAP_MIN_ZOOM = 6;
+/** True state extent — used to fit the full state into the frame. */
+const STATE_BOUNDS: [[number, number], [number, number]] = [
+  [11.57, 74.09],
+  [18.46, 78.58],
+];
+/** Outer ring for the inverse mask: world rectangle with Karnataka as a hole. */
+const WORLD_RING: Array<[number, number]> = [
+  [-89, -179],
+  [89, -179],
+  [89, 179],
+  [-89, 179],
+];
 /** ~2km bins keep the density readable at state zoom. */
 const GRID_BIN_DEGREES = 0.02;
-/** Dark CARTO raster matches the app theme; attribution required. */
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+/** OpenStreetMap raster — the CARTO CDN is unreachable on some networks. */
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 interface DensityBin {
   lat: number;
@@ -74,6 +94,8 @@ export function CrimeDensityMap({
   crimeTypeFilter: string | null;
 }) {
   const [tilesFailed, setTilesFailed] = useState(false);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const stateRing = useMemo(() => karnatakaGeoRing(), []);
 
   const bins = useMemo(() => {
     const filtered = crimeTypeFilter
@@ -90,14 +112,47 @@ export function CrimeDensityMap({
           Basemap tiles unavailable offline — showing incident layers only
         </div>
       )}
+      <button
+        type="button"
+        onClick={() => mapRef.current?.fitBounds(STATE_BOUNDS, { padding: [8, 8] })}
+        aria-label="Reset view"
+        title="Reset view"
+        className="absolute left-[10px] top-[80px] z-[1000] flex h-[30px] w-[30px] items-center justify-center rounded-[4px] border-2 border-[rgba(0,0,0,0.2)] bg-white text-sm text-[#333] hover:bg-[#f4f4f4]"
+      >
+        ⟳
+      </button>
       <MapContainer
+        ref={mapRef}
         center={MAP_CENTER}
         zoom={MAP_ZOOM}
+        minZoom={MAP_MIN_ZOOM}
+        maxBounds={MAP_BOUNDS}
+        maxBoundsViscosity={1}
         scrollWheelZoom
+        preferCanvas
+        whenReady={() => mapRef.current?.fitBounds(STATE_BOUNDS, { padding: [8, 8] })}
         className="h-full w-full bg-[var(--surface-2)]"
       >
-        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+        <TileLayer
+          url={TILE_URL}
+          attribution={TILE_ATTRIBUTION}
+          updateWhenZooming={false}
+          keepBuffer={4}
+        />
         <TileErrorWatcher onTileError={() => setTilesFailed(true)} />
+
+        {/* Inverse mask: hide everything outside Karnataka; draw the state border. */}
+        <Polygon
+          positions={[WORLD_RING, stateRing]}
+          interactive={false}
+          pathOptions={{
+            color: '#7d7668',
+            weight: 2,
+            fillColor: '#f4f1ea',
+            fillOpacity: 1,
+            fillRule: 'evenodd',
+          }}
+        />
 
         {layers.density &&
           bins.map((bin) => (

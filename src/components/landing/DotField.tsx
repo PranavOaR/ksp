@@ -29,7 +29,8 @@ export function DotField({ isActive }: { isActive: boolean }) {
         x,
         y,
         intensity: district === 'Bengaluru City' ? 1 : 0.3 + rng.next() * 0.45,
-        badge: district === 'Bengaluru City' ? 3 : index === 4 ? 2 : undefined,
+        badge:
+          district === 'Bengaluru City' ? 3 : index === 4 ? 2 : index === 6 ? 1 : undefined,
       };
     });
   }, []);

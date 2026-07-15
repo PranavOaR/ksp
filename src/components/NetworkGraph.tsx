@@ -1,11 +1,44 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { NetworkGraph as GraphData, GraphNode } from '@/lib/intel/types';
 
 const WIDTH = 900;
 const HEIGHT = 560;
 const ITERATIONS = 260;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 5;
+const ZOOM_STEP = 1.25;
+
+interface Transform {
+  k: number;
+  x: number;
+  y: number;
+}
+
+const IDENTITY: Transform = { k: 1, x: 0, y: 0 };
+
+function clampZoom(k: number): number {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k));
+}
+
+/** Re-scale the view around a fixed point (in viewBox coords) so it stays put. */
+function zoomAround(transform: Transform, nextK: number, px: number, py: number): Transform {
+  const k = clampZoom(nextK);
+  const cx = (px - transform.x) / transform.k;
+  const cy = (py - transform.y) / transform.k;
+  return { k, x: px - cx * k, y: py - cy * k };
+}
+
+/** Map a pointer position to viewBox coordinates regardless of rendered size. */
+function toViewBox(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: ((clientX - rect.left) / rect.width) * WIDTH,
+    y: ((clientY - rect.top) / rect.height) * HEIGHT,
+  };
+}
 
 const KIND_COLORS: Record<GraphNode['kind'], string> = {
   person: '#2a78d6',
@@ -95,6 +128,67 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
 
+  const [transform, setTransform] = useState<Transform>(IDENTITY);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const panRef = useRef<{ pointerId: number; startX: number; startY: number; origin: Transform } | null>(
+    null
+  );
+  const [isPanning, setIsPanning] = useState(false);
+
+  const zoomBy = useCallback((factor: number) => {
+    setTransform((current) => zoomAround(current, current.k * factor, WIDTH / 2, HEIGHT / 2));
+  }, []);
+
+  const resetView = useCallback(() => setTransform(IDENTITY), []);
+
+  // Native non-passive wheel listener: React's onWheel is passive, so it
+  // cannot preventDefault() — without this the browser zooms/scrolls the page.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const { x, y } = toViewBox(svg, event.clientX, event.clientY);
+      const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+      setTransform((current) => zoomAround(current, current.k * factor, x, y));
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<SVGSVGElement>) => {
+      if (event.button !== 0) return;
+      setHoveredId(null);
+      panRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        origin: transform,
+      };
+      setIsPanning(true);
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [transform]
+  );
+
+  const handlePointerMove = useCallback((event: ReactPointerEvent<SVGSVGElement>) => {
+    const pan = panRef.current;
+    if (!pan || pan.pointerId !== event.pointerId || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    setTransform({
+      k: pan.origin.k,
+      x: pan.origin.x + ((event.clientX - pan.startX) / rect.width) * WIDTH,
+      y: pan.origin.y + ((event.clientY - pan.startY) / rect.height) * HEIGHT,
+    });
+  }, []);
+
+  const endPan = useCallback((event: ReactPointerEvent<SVGSVGElement>) => {
+    if (panRef.current?.pointerId !== event.pointerId) return;
+    panRef.current = null;
+    setIsPanning(false);
+  }, []);
+
   const neighborIds = useMemo(() => {
     if (!hoveredId) return new Set<string>();
     const ids = new Set<string>([hoveredId]);
@@ -121,8 +215,48 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
           </span>
         ))}
       </div>
-      <div className="overflow-x-auto rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)]">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="min-w-[640px]" role="img" aria-label="Criminal network graph">
+      <div className="relative overflow-hidden rounded-lg border border-[var(--border-1)] bg-[var(--surface-0)]">
+        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => zoomBy(ZOOM_STEP)}
+            disabled={transform.k >= MAX_ZOOM}
+            aria-label="Zoom in"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-1)] bg-white text-lg font-semibold text-[var(--text-secondary)] shadow-sm transition-colors hover:text-[var(--accent)] disabled:opacity-40"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={() => zoomBy(1 / ZOOM_STEP)}
+            disabled={transform.k <= MIN_ZOOM}
+            aria-label="Zoom out"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-1)] bg-white text-lg font-semibold text-[var(--text-secondary)] shadow-sm transition-colors hover:text-[var(--accent)] disabled:opacity-40"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={resetView}
+            aria-label="Reset view"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-1)] bg-white text-sm text-[var(--text-secondary)] shadow-sm transition-colors hover:text-[var(--accent)]"
+          >
+            ⟳
+          </button>
+        </div>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          className="w-full touch-none select-none"
+          style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+          role="img"
+          aria-label="Criminal network graph — scroll to zoom, drag to pan"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endPan}
+          onPointerCancel={endPan}
+        >
+          <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}>
           {graph.edges.map((edge) => {
             const a = nodeById.get(edge.source);
             const b = nodeById.get(edge.target);
@@ -176,6 +310,7 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
               </g>
             );
           })}
+          </g>
         </svg>
       </div>
       {hoveredId ? (
@@ -186,7 +321,7 @@ export function NetworkGraphView({ graph }: { graph: GraphData }) {
         </p>
       ) : (
         <p className="mt-2 text-xs text-[var(--text-muted)]">
-          Hover a node to isolate its direct connections.
+          Hover a node to isolate its connections · scroll to zoom · drag to pan.
         </p>
       )}
     </div>
