@@ -49,7 +49,7 @@ Logins are mapped to the official rank/unit hierarchy; district postings scope d
 | **A′ — Investigation agent** | "Investigate ⟨name⟩" autonomously chains 8 intel tools into a lead memo with a live step trace | `src/lib/intel/agent.ts`, `/copilot` |
 | **A6 — Knowledge base** | Legal/procedure questions answered from real BNS/IT/NDPS section text + SOPs (FTS5 retrieval, cited) | `src/lib/intel/knowledge.ts` |
 | **B — Network intel** | 2–3-hop BFS across persons, FIRs, phones, vehicles; crime ring detection | `src/lib/intel/network.ts`, `gangs.ts` |
-| **C — Analytics + map** | Temporal/geographic/MO analytics; interactive crime-density map with emerging-hotspot and 3-month forecast layers | `src/lib/intel/hotspots.ts`, `/map` |
+| **C — Analytics + map** | Temporal/geographic/MO analytics; interactive Karnataka-only crime-density map (OSM basemap, state-boundary mask, canvas-rendered) with emerging-hotspot and 3-month forecast layers | `src/lib/intel/hotspots.ts`, `/map` |
 | **D — Sociology** | Crime rates correlated with 2011 Census literacy & urbanisation; social-risk score per district | `src/lib/intel/sociology.ts`, `src/lib/data/census.ts` |
 | **E — Offenders** | Repeat-offender register; explainable risk score (priors + network + recency + versatility) | `src/lib/intel/riskScoring.ts` |
 | **F — Case intel** | Auto case summary, timeline, similar-case retrieval, investigative leads | `src/lib/intel/caseIntel.ts` |
@@ -75,10 +75,10 @@ npm run build && npm start  # production build (set AUTH_SECRET — required in 
 | **A3** Kannada support | Ask in ಕನ್ನಡ, get answers in ಕನ್ನಡ grounded in real database results (English fields like FIR numbers preserved) | `llm.ts` language detection + compose |
 | **A4** Voice interface | Speak questions (English/Kannada) via the browser SpeechRecognition API; answers read back with speech synthesis | `src/components/copilot/useVoice.ts` |
 | **A5** Conversation export | CSV and PDF export with queries, answers, confidence, evidence refs, timestamps | `/copilot` → Export CSV / PDF |
-| **B1/B3** Network graph + entity explorer | 2–3-hop BFS across persons, FIRs, phones, vehicles, bank accounts; custom SVG force layout | `src/lib/intel/network.ts`, `/network` |
+| **B1/B3** Network graph + entity explorer | 2–3-hop BFS across persons, FIRs, phones, vehicles, bank accounts; custom SVG force layout with wheel zoom, drag-pan and reset (shared by the Financial money-trail graph) | `src/lib/intel/network.ts`, `/network` |
 | **B2** Organized crime detection | Union-find clustering of repeat co-accused → crime rings (recovers all 5 seeded gangs) | `src/lib/intel/gangs.ts` |
 | **C1/C2** Temporal + geographic analytics | Monthly trend, hour-of-day, district and crime-type breakdowns | `/analytics` |
-| **C3/H3** Hotspot detection + density map | Intensity ranking + emerging-cluster flags (quarter-over-quarter growth), rendered as an interactive geographic density map with a per-district **3-month forecast overlay** (dashed = predicted growth/decline) | `src/lib/intel/hotspots.ts`, `/map` |
+| **C3/H3** Hotspot detection + density map | Intensity ranking + emerging-cluster flags (quarter-over-quarter growth), rendered as an interactive geographic density map masked to Karnataka's real GADM boundary, with a per-district **3-month forecast overlay** (dashed = predicted growth/decline) | `src/lib/intel/hotspots.ts`, `/map` |
 | **C4** MO serial patterns | FIRs sharing an identical modus operandi clustered as potential serial offenders; banner on case detail | `src/lib/intel/moClusters.ts`, `/analytics` |
 | **D** Sociological intelligence | District crime rates correlated (Pearson) with 2011 Census literacy & urbanisation; explainable social-risk score | `src/lib/intel/sociology.ts`, `/sociology` |
 | **E1–E3** Offender profiling + risk scoring | Repeat-offender register; explainable weighted score (priors, network degree, recency, versatility) → Low/Medium/High | `src/lib/intel/riskScoring.ts`, `/offenders` |
@@ -117,6 +117,7 @@ Design notes:
 - **Seeded RNG** (`mulberry32`) makes the demo dataset identical on every machine; official-schema data (v2) draws from a second stream so the base dataset never shifts across migrations.
 - **API envelope** is uniform: `{ success, data, error }`; failures log server-side and return generic messages.
 - Chart palette follows a CVD-validated dark-mode palette (all contrast/colorblind checks pass).
+- **Public landing is a single scrolling page** — Platform, Modules and Security are sections on `/` with smooth-scroll navbar anchors; the old `/platform`, `/modules`, `/security` routes redirect to their anchors.
 - **Scale & latency**: the architecture is reasoned for 1–2 lakh cases with an explicit latency budget — see [`docs/scalability.md`](docs/scalability.md).
 
 ## Demo script
