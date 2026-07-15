@@ -65,11 +65,13 @@ npm run build && npm start  # production build
 | **D** Sociological intelligence | District crime rates correlated (Pearson) with 2011 Census literacy & urbanisation; explainable social-risk score | `src/lib/intel/sociology.ts`, `/sociology` |
 | **E1–E3** Offender profiling + risk scoring | Repeat-offender register; explainable weighted score (priors, network degree, recency, versatility) → Low/Medium/High | `src/lib/intel/riskScoring.ts`, `/offenders` |
 | **F1–F4** Investigator decision support | Auto case summary, timeline, similar-case retrieval (MO/type/location), suggested leads incl. financial referrals | `src/lib/intel/caseIntel.ts`, `/cases/[id]` |
+| **F5** Case intake | Create a new case manually or bulk-import FIRs (CSV) into the **live** workspace | `src/lib/intel/createCase.ts`, `/cases/new`, `/cases/import` |
 | **G1–G3** Financial intelligence | Money-trail graph visualization, circular-transfer (layering) ring detection, high-value transaction leads on case pages + dedicated Financial page | `src/lib/intel/financial.ts`, `/financial`, `caseIntel.ts` |
 | **H1–H3** Forecasting + early warning | Least-squares 3-month forecast; emerging-hotspot alerts on the overview | `src/lib/intel/forecast.ts`, `/`, `/analytics` |
 | **I1–I3** Explainable AI | Every answer carries evidence (FIR numbers), a reasoning trail, and a confidence score | `/copilot` response cards |
 | **J1** RBAC-lite | Role switcher (Investigator/Analyst/Supervisor/Administrator); role tags every audit row | top bar |
 | **J2** Audit logging | Every query, view, and export logged | `src/lib/audit.ts`, `/audit` |
+| **J3** Workspaces | Switch between the seeded **demo** dataset and a **live** workspace of imported cases; the active workspace scopes every query | `src/lib/workspace.ts`, `/api/workspace` |
 
 To enable the Claude-powered Copilot, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot transparently uses the offline rule engine — every response is badged with the engine that produced it.
 
@@ -79,22 +81,45 @@ Not yet built (honest gaps): Hindi/Tamil/Telugu (A3 lists them as future languag
 
 ```
 src/
-├── app/                # Next.js App Router
-│   ├── api/            # chat, analytics, network, offenders, cases, overview, audit
-│   └── (pages)         # /, /copilot, /network, /analytics, /offenders, /cases, /audit
-├── components/         # UI: sidebar, charts (Recharts), SVG network graph, copilot cards
+├── app/                       # Next.js App Router (v16, Turbopack)
+│   ├── page.tsx               # public landing (hero, "With/Without Drishti" toggle)
+│   ├── platform / modules /   # public marketing pages
+│   │   security
+│   ├── login/                 # session-cookie sign-in
+│   ├── (app)/                 # authenticated shell (sidebar + top bar)
+│   │   ├── overview           # KPIs, emerging-hotspot early warning, forecast
+│   │   ├── copilot            # natural-language Copilot (Claude + offline engine)
+│   │   ├── network            # 2–3-hop entity graph + crime rings
+│   │   ├── financial          # money-trail graph + layering ring detection
+│   │   ├── analytics          # temporal / geographic / hotspot / MO patterns
+│   │   ├── offenders          # repeat-offender register + risk scores
+│   │   ├── sociology          # census-correlated social-risk intelligence
+│   │   ├── cases              # case list, detail (/[id]), create (/new), import
+│   │   └── audit              # governance audit trail
+│   └── api/                   # auth, chat, overview, analytics, network, financial,
+│                              # offenders, sociology, cases, import, workspace, audit,
+│                              # admin/reset-demo
+├── components/                # UI: sidebar, Recharts charts, SVG network graph,
+│                              # landing hero (DotField map), copilot cards
 └── lib/
-    ├── db/             # better-sqlite3 client, schema, deterministic seeder
-    ├── intel/          # PURE intelligence core — parser, executor, risk, hotspots,
-    │                   # forecast, gangs, network, case intel (95%+ test coverage)
-    └── audit.ts        # J2 audit logging
+    ├── db/                    # better-sqlite3 client, schema, deterministic seeder
+    ├── data/                  # static reference data (2011 census, district coords)
+    ├── intel/                 # PURE intelligence core — query parser + executor,
+    │                          # risk, hotspots, MO clusters, forecast, gangs, network,
+    │                          # case intel, financial, sociology, offenders, LLM adapter
+    ├── auth.ts / authShared.ts# session-cookie RBAC-lite
+    ├── workspace.ts           # demo (synthetic) vs. live (imported) data workspaces
+    ├── rateLimit.ts           # per-route rate limiting
+    └── audit.ts               # J2 audit logging
 ```
 
 Design notes:
 
 - **Intelligence core is pure and DB-agnostic where possible** — parser, risk scorer, hotspot detector, forecaster, and ring detector take plain data in and return plain data out, so they're unit-tested without any database.
+- **Two workspaces** — every request resolves a `demo` (seeded synthetic) or `live` (user-imported) workspace from a cookie; the demo workspace is the default and is what the walkthrough uses.
 - **Seeded RNG** (`mulberry32`) makes the demo dataset identical on every machine.
-- **API envelope** is uniform: `{ success, data, error }`; failures log server-side and return generic messages.
+- **API envelope** is uniform: `{ success, data, error }`; failures log server-side and return generic messages. Mutating routes are rate-limited.
+- **Branding** — the DRISHTI logo (`public/drishti-logo.png`) is used across the landing nav, app sidebar, and login.
 - Chart palette follows a CVD-validated dark-mode palette (all contrast/colorblind checks pass).
 
 ## Demo script

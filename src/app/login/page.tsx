@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -53,9 +54,14 @@ export default function LoginPage() {
       <div className="rise-in w-full max-w-md">
         <div className="mb-4 flex justify-end"><LangToggle /></div>
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] font-display text-lg font-black text-white">
-            ದೃ
-          </span>
+          <Image
+            src="/drishti-logo.png"
+            alt="DRISHTI logo"
+            width={40}
+            height={40}
+            priority
+            className="h-10 w-10 rounded-xl"
+          />
           <span className="font-display text-2xl font-extrabold tracking-tight">DRISHTI</span>
         </Link>
 

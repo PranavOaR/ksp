@@ -208,14 +208,14 @@ body {
 }
 
 .float-card {
-  animation: bob 6s ease-in-out infinite, fadeIn 0.8s ease both;
+  animation: bob 6s ease-in-out infinite;
   box-shadow: 0 2px 6px rgba(27, 24, 19, 0.06), 0 24px 48px -24px rgba(27, 24, 19, 0.35);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-.float-delay-1 { animation-delay: 0s, 0.3s; }
-.float-delay-2 { animation-delay: 1.6s, 0.55s; }
-.float-delay-3 { animation-delay: 3.1s, 0.8s; }
+.float-delay-1 { animation-delay: 0s; }
+.float-delay-2 { animation-delay: 1.6s; }
+.float-delay-3 { animation-delay: 3.1s; }
 
 @keyframes pulse-ring {
   0% { transform: scale(0.9); opacity: 0.7; }

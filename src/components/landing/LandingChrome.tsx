@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LangToggle, useLanguage } from '@/lib/i18n';
@@ -18,9 +19,14 @@ export function LandingNav() {
   return (
     <header className="fade-in sticky top-5 z-20 mx-auto mt-5 flex w-[min(1060px,92%)] items-center justify-between rounded-full border border-[var(--border-1)] bg-[var(--surface-1)]/95 py-2.5 pl-5 pr-2.5 shadow-[0_10px_34px_-18px_rgba(27,24,19,0.4)] backdrop-blur">
       <Link href="/" className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] font-display text-sm font-black text-white">
-          ದೃ
-        </span>
+        <Image
+          src="/drishti-logo.png"
+          alt="DRISHTI logo"
+          width={32}
+          height={32}
+          priority
+          className="h-8 w-8 rounded-lg"
+        />
         <span className="font-display text-lg font-extrabold tracking-tight">DRISHTI</span>
       </Link>
       <nav className="hidden items-center gap-7 text-sm text-[var(--text-secondary)] md:flex">

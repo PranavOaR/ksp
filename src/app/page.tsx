@@ -18,8 +18,9 @@ function FloatCard({
   return (
     <div
       className={`float-card absolute rounded-2xl border border-[var(--border-1)] bg-white p-4 ${className} ${
-        isVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+        isVisible ? 'opacity-100' : 'pointer-events-none opacity-[0.22]'
       }`}
+      aria-hidden={!isVisible}
     >
       {children}
     </div>
