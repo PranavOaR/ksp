@@ -27,17 +27,25 @@ add an **entity-resolution layer** (global `persons` + `resolved_person_id` link
 schema has no cross-case identity, and this layer is what makes repeat-offender and network
 intelligence possible. Full column-level mapping and rationale: [`docs/schema-mapping.md`](docs/schema-mapping.md).
 
+## Live deployment (for judges)
+
+DRISHTI is deployed on **Zoho Catalyst AppSail**:
+**https://drishti-50043996955.development.catalystappsail.in**
+
+Sign in with any of the demo accounts below using password **`ksp-498def21`**
+(the live site uses its own password; `drishti123` only works on a local checkout).
+
 ## Demo accounts
 
 Logins are mapped to the official rank/unit hierarchy; district postings scope data access
 (visible as a "Scoped to your jurisdiction" line in Copilot reasoning trails).
 
-| Role | Username | Password | Rank · Posting | Data scope |
+| Role | Username | Password (live / local) | Rank · Posting | Data scope |
 |---|---|---|---|---|
-| **Investigator** | `investigator` | `drishti123` | PSI · Bengaluru City East PS | Bengaluru City |
-| **Analyst** | `analyst` | `drishti123` | PI · State Crime Records Bureau | Statewide (+ Financial Intel) |
-| **Supervisor** | `supervisor` | `drishti123` | SP · Bengaluru City District | Bengaluru City (+ Audit, status updates) |
-| **Administrator** | `admin` | `drishti123` | DGP · State Police HQ | Statewide, full access |
+| **Investigator** | `investigator` | `ksp-498def21` / `drishti123` | PSI · Bengaluru City East PS | Bengaluru City |
+| **Analyst** | `analyst` | `ksp-498def21` / `drishti123` | PI · State Crime Records Bureau | Statewide (+ Financial Intel) |
+| **Supervisor** | `supervisor` | `ksp-498def21` / `drishti123` | SP · Bengaluru City District | Bengaluru City (+ Audit, status updates) |
+| **Administrator** | `admin` | `ksp-498def21` / `drishti123` | DGP · State Police HQ | Statewide, full access |
 
 > **To enable Claude-powered Copilot:** put `ANTHROPIC_API_KEY=sk-ant-...` in `.env.local` (gitignored). Without a key the Copilot uses the offline rule engine — every response is badged with the engine that produced it.
 
