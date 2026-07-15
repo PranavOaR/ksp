@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated AppSail bundle and its plain-JS entrypoint template
+    "appsail/**",
+    "deploy/**",
   ]),
 ]);
 

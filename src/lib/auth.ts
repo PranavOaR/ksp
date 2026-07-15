@@ -13,7 +13,6 @@ const SESSION_TTL_SECONDS = 12 * 60 * 60; // one shift
  */
 export interface DemoUser {
   username: string;
-  password: string;
   name: string;
   rank: string;
   role: UserRole;
@@ -24,25 +23,25 @@ export interface DemoUser {
 
 export const DEMO_USERS: DemoUser[] = [
   {
-    username: 'investigator', password: 'drishti123', name: 'Ravi Kumar',
+    username: 'investigator', name: 'Ravi Kumar',
     rank: 'Police Sub-Inspector', role: 'Investigator',
     unitName: 'Bengaluru City East PS', rankHierarchy: 9,
     jurisdictionDistrict: 'Bengaluru City',
   },
   {
-    username: 'analyst', password: 'drishti123', name: 'Deepa Rao',
+    username: 'analyst', name: 'Deepa Rao',
     rank: 'Police Inspector', role: 'Analyst',
     unitName: 'State Crime Records Bureau', rankHierarchy: 8,
     jurisdictionDistrict: null,
   },
   {
-    username: 'supervisor', password: 'drishti123', name: 'Harish Gowda',
+    username: 'supervisor', name: 'Harish Gowda',
     rank: 'Superintendent of Police', role: 'Supervisor',
     unitName: 'Bengaluru City District Police Office', rankHierarchy: 5,
     jurisdictionDistrict: 'Bengaluru City',
   },
   {
-    username: 'admin', password: 'drishti123', name: 'Anitha Shetty',
+    username: 'admin', name: 'Anitha Shetty',
     rank: 'Director General of Police', role: 'Administrator',
     unitName: 'Karnataka State Police HQ', rankHierarchy: 1,
     jurisdictionDistrict: null,
@@ -73,6 +72,19 @@ function getSecret(): string {
   return 'drishti-demo-secret-rotate-in-production';
 }
 
+/**
+ * Shared demo-account password. Local development falls back to a known
+ * value; production must set DEMO_PASSWORD so the public repo never
+ * contains working credentials for the deployed site.
+ */
+function getDemoPassword(): string {
+  if (process.env.DEMO_PASSWORD) return process.env.DEMO_PASSWORD;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('DEMO_PASSWORD must be set in production');
+  }
+  return 'drishti123';
+}
+
 function base64UrlEncode(value: string): string {
   return Buffer.from(value, 'utf8').toString('base64url');
 }
@@ -84,7 +96,7 @@ function sign(payload: string, secret: string): string {
 export function authenticate(username: string, password: string): DemoUser | null {
   const user = DEMO_USERS.find((candidate) => candidate.username === username.toLowerCase().trim());
   if (!user) return null;
-  const expected = Buffer.from(user.password);
+  const expected = Buffer.from(getDemoPassword());
   const provided = Buffer.from(password);
   if (expected.length !== provided.length || !crypto.timingSafeEqual(expected, provided)) {
     return null;

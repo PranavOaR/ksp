@@ -1,4 +1,4 @@
-import { fail, roleFromRequest, withErrorHandling } from '@/lib/api';
+import { fail, withErrorHandling } from '@/lib/api';
 import { logAudit } from '@/lib/audit';
 import { sessionFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
@@ -43,6 +43,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const session = sessionFromRequest(request);
+  if (!session) return fail('Sign in required.', 401);
   const { id } = await context.params;
   const firId = Number(id);
   if (!Number.isInteger(firId) || firId <= 0) {
@@ -55,7 +57,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     if (!intelligence) {
       throw new Error(`Case ${firId} not found`);
     }
-    logAudit(db, roleFromRequest(request), 'view_case', intelligence.fir.fir_number);
+    logAudit(db, session.role, 'view_case', intelligence.fir.fir_number);
 
     // A3: check whether this case is part of a serial MO cluster (C4)
     const allMoRows = db

@@ -28,11 +28,18 @@ interface WindowState {
 /** Expired entries are swept once the map grows past this size. */
 const PRUNE_THRESHOLD = 1000;
 
+export interface RateLimiter {
+  /** Records an attempt for the key and returns the decision. */
+  (key: string): RateLimitDecision;
+  /** Inspects the key's window without recording an attempt. */
+  peek(key: string): RateLimitDecision;
+}
+
 export function createRateLimiter({
   limit,
   windowMs,
   now = Date.now,
-}: RateLimiterOptions): (key: string) => RateLimitDecision {
+}: RateLimiterOptions): RateLimiter {
   const windows = new Map<string, WindowState>();
 
   const prune = (currentMs: number) => {
@@ -42,7 +49,12 @@ export function createRateLimiter({
     }
   };
 
-  return function check(key: string): RateLimitDecision {
+  const blockedDecision = (state: WindowState, currentMs: number): RateLimitDecision => {
+    const msUntilReset = state.windowStartMs + windowMs - currentMs;
+    return { allowed: false, remaining: 0, retryAfterSeconds: Math.ceil(msUntilReset / 1000) };
+  };
+
+  const record = function check(key: string): RateLimitDecision {
     const currentMs = now();
     prune(currentMs);
 
@@ -53,15 +65,24 @@ export function createRateLimiter({
     }
 
     if (state.count >= limit) {
-      const msUntilReset = state.windowStartMs + windowMs - currentMs;
-      return {
-        allowed: false,
-        remaining: 0,
-        retryAfterSeconds: Math.ceil(msUntilReset / 1000),
-      };
+      return blockedDecision(state, currentMs);
     }
 
     windows.set(key, { windowStartMs: state.windowStartMs, count: state.count + 1 });
     return { allowed: true, remaining: limit - state.count - 1, retryAfterSeconds: 0 };
+  } as RateLimiter;
+
+  record.peek = (key: string): RateLimitDecision => {
+    const currentMs = now();
+    const state = windows.get(key);
+    if (!state || currentMs - state.windowStartMs >= windowMs) {
+      return { allowed: true, remaining: limit, retryAfterSeconds: 0 };
+    }
+    if (state.count >= limit) {
+      return blockedDecision(state, currentMs);
+    }
+    return { allowed: true, remaining: limit - state.count, retryAfterSeconds: 0 };
   };
+
+  return record;
 }
