@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/clientApi';
 import type { QueryFilter } from '@/lib/intel/types';
@@ -153,12 +154,14 @@ function CopilotChat() {
       <div className="card card-static flex-1 space-y-5 overflow-y-auto p-5">
         {turns.length === 0 && (
           <div className="py-10 text-center text-sm text-[var(--text-muted)]">
-            <span
+            <Image
+              src="/drishti-logo.png"
+              alt=""
               aria-hidden
-              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] font-display text-xl font-black text-[var(--accent)]"
-            >
-              ದೃ
-            </span>
+              width={56}
+              height={56}
+              className="mx-auto mb-4 h-14 w-14 rounded-2xl"
+            />
             <p className="mb-4">{t('copilot.emptyPrompt')}</p>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((suggestion) => (

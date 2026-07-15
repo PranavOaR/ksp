@@ -5,6 +5,9 @@ import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n';
 import { DotField } from '@/components/landing/DotField';
 import { LandingFooter, LandingNav } from '@/components/landing/LandingChrome';
+import { PlatformSection } from '@/components/landing/PlatformSection';
+import { ModulesSection } from '@/components/landing/ModulesSection';
+import { SecuritySection } from '@/components/landing/SecuritySection';
 
 function FloatCard({
   className,
@@ -17,7 +20,7 @@ function FloatCard({
 }) {
   return (
     <div
-      className={`float-card absolute rounded-2xl border border-[var(--border-1)] bg-white p-4 ${className} ${
+      className={`float-card absolute rounded-2xl border border-[var(--border-1)] bg-white p-3.5 ${className} ${
         isVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
       }`}
     >
@@ -35,7 +38,7 @@ export default function LandingPage() {
       <LandingNav />
 
       {/* Hero */}
-      <section className="mx-auto grid w-[min(1180px,92%)] gap-12 pb-16 pt-14 lg:grid-cols-[1.02fr_1fr] lg:items-center">
+      <section className="mx-auto grid w-[min(1080px,90%)] gap-12 pb-16 pt-14 lg:grid-cols-[1.02fr_1fr] lg:items-center">
         <div className="rise-in">
           <div className="mb-7 flex items-center gap-3 text-[15px]">
             <span className="flex -space-x-1.5" aria-hidden>
@@ -83,28 +86,28 @@ export default function LandingPage() {
           <button
             type="button"
             onClick={() => setWithDrishti((previous) => !previous)}
-            className="absolute -top-1 right-0 z-10 flex items-center gap-2.5 rounded-full border border-[var(--border-1)] bg-white py-1.5 pl-2 pr-4 shadow-md transition-transform hover:scale-[1.03]"
+            className="absolute -top-1 right-0 z-10 flex items-center gap-2 rounded-full border border-[var(--border-1)] bg-white py-1 pl-1.5 pr-3 shadow-md transition-transform hover:scale-[1.03]"
             aria-pressed={withDrishti}
           >
             <span
-              className={`flex h-6 w-11 items-center rounded-full p-0.5 transition-colors ${
+              className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
                 withDrishti ? 'bg-[var(--accent)]' : 'bg-stone-300'
               }`}
             >
               <span
-                className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  withDrishti ? 'translate-x-5' : ''
+                className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                  withDrishti ? 'translate-x-4' : ''
                 }`}
               />
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
               {withDrishti ? t('landing.withDrishti') : t('landing.withoutDrishti')}
             </span>
           </button>
 
           <DotField isActive={withDrishti} />
 
-          <FloatCard className="float-delay-1 left-[2%] top-[16%] w-60" isVisible={withDrishti}>
+          <FloatCard className="float-delay-1 left-[2%] top-[16%] w-56" isVisible={withDrishti}>
             <div className="font-display text-sm font-bold text-[var(--text-primary)]">
               FIR/2026/BEN/0219
             </div>
@@ -115,7 +118,7 @@ export default function LandingPage() {
             </div>
           </FloatCard>
 
-          <FloatCard className="float-delay-2 right-[0%] top-[38%] w-56" isVisible={withDrishti}>
+          <FloatCard className="float-delay-2 right-[0%] top-[38%] w-52" isVisible={withDrishti}>
             <div className="font-display text-sm font-bold text-[var(--text-primary)]">
               Crime Ring #1
             </div>
@@ -126,7 +129,7 @@ export default function LandingPage() {
             </div>
           </FloatCard>
 
-          <FloatCard className="float-delay-3 bottom-[8%] left-[14%] w-64" isVisible={withDrishti}>
+          <FloatCard className="float-delay-3 bottom-[8%] left-[14%] w-60" isVisible={withDrishti}>
             <div className="flex items-center justify-between">
               <div className="font-display text-sm font-bold text-[var(--text-primary)]">
                 Early warning
@@ -145,7 +148,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <LandingFooter />
+      {/* Single scrolling page: platform → modules → security */}
+      <PlatformSection />
+      <ModulesSection />
+      <SecuritySection />
+
+      <LandingFooter showCta />
     </div>
   );
 }

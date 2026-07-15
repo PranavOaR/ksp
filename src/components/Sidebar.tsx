@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { APP_NAME } from '@/lib/constants';
@@ -30,9 +31,14 @@ export function Sidebar() {
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-[var(--border-1)] bg-[var(--surface-1)] md:flex">
       <div className="px-5 py-6">
         <Link href="/overview" className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] font-display text-lg font-black text-white shadow-[0_6px_16px_-8px_rgba(224,90,28,0.7)]">
-            ದೃ
-          </span>
+          <Image
+            src="/drishti-logo.png"
+            alt="DRISHTI logo"
+            width={40}
+            height={40}
+            priority
+            className="h-10 w-10 rounded-xl shadow-[0_6px_16px_-8px_rgba(224,90,28,0.7)]"
+          />
           <span>
             <span className="block font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
               {APP_NAME}
